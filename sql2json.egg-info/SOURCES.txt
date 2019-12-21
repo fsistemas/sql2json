@@ -1,6 +1,10 @@
 README.rst
 setup.py
 sql2json/__init__.py
+sql2json/__init__.pyc
+sql2json/__main__.py
+sql2json/sql2json.py
+sql2json/sql2json.pyc
 sql2json.egg-info/PKG-INFO
 sql2json.egg-info/SOURCES.txt
 sql2json.egg-info/dependency_links.txt

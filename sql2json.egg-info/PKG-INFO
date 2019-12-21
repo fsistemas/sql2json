@@ -3,9 +3,9 @@ Name: sql2json
 Version: 0.1.0
 Summary: SQL query to JSON
 Home-page: UNKNOWN
-Author: Francisco Pérez
+Author: Francisco PÃ©rez
 Author-email: fsistemas@gmail.com
 License: UNKNOWN
 Description: UNKNOWN
 Platform: UNKNOWN
-Requires-Python: >=2.7,<3.0
+Requires-Python: >=3.5,<4.0
