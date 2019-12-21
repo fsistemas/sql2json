@@ -1,0 +1,11 @@
+Metadata-Version: 1.2
+Name: sql2json
+Version: 0.1.0
+Summary: SQL query to JSON
+Home-page: UNKNOWN
+Author: Francisco Pérez
+Author-email: fsistemas@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=2.7,<3.0

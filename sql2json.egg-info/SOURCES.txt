@@ -1,0 +1,8 @@
+README.rst
+setup.py
+sql2json/__init__.py
+sql2json.egg-info/PKG-INFO
+sql2json.egg-info/SOURCES.txt
+sql2json.egg-info/dependency_links.txt
+sql2json.egg-info/requires.txt
+sql2json.egg-info/top_level.txt
