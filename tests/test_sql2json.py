@@ -5,7 +5,6 @@ import json
 def test_version():
     assert __version__ == '0.1.1'
 
-
 def test_run_query_by_name_empty_param():
     json_results = run_query_by_name()
     json_result = json_results[0]
@@ -20,7 +19,7 @@ def test_run_query_by_name_default_defalt_name():
     assert 1 == json_result["a"]
     assert 2 == json_result["b"]
 
-def test_run_query_by_name_default_defalt_name():
+def test_run_query_by_name_default_defalt_query():
     json_results = run_query_by_name(query_name="default")
     json_result = json_results[0]
 
