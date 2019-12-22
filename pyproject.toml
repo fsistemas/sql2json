@@ -2,7 +2,12 @@
 name = "sql2json"
 version = "0.1.1"
 description = "SQL query to JSON"
-authors = ["Francisco Pérez <fsistemas@gmail.com>"]
+authors = ["Francisco Perez <fsistemas@gmail.com>"]
+
+repository = "https://github.com/fsistemas/sql2json"
+homepage = "https://github.com/fsistemas/sql2json"
+
+keywords = ['sql', 'json', 'tool']
 
 [tool.poetry.dependencies]
 python = "^3.5"

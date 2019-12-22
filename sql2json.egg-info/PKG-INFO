@@ -1,11 +1,11 @@
 Metadata-Version: 1.2
 Name: sql2json
-Version: 0.1.0
+Version: 0.1.1
 Summary: SQL query to JSON
-Home-page: UNKNOWN
-Author: Francisco PÃ©rez
+Home-page: https://github.com/fsistemas/sql2json
+Author: Francisco Pérez
 Author-email: fsistemas@gmail.com
 License: UNKNOWN
-Description: UNKNOWN
+Description: sql2json help you to convert SQL query result to JSON
 Platform: UNKNOWN
 Requires-Python: >=3.5,<4.0
