@@ -7,7 +7,6 @@ sql2json is a tool to query a sql database and write an output in JSON format in
 sql2json install
 ================
 
-* **python2**: pip install sql2json
 * **python3**: pip3 install sql2json
 
 sql2json config file
