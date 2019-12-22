@@ -7,8 +7,8 @@ sql2json is a tool to query a sql database and write an output in JSON format in
 sql2json install
 ================
 
-* python2: pip install sql2json
-* python3: pip3 install sql2json
+* **python2**: pip install sql2json
+* **python3**: pip3 install sql2json
 
 sql2json config file
 ====================
@@ -18,6 +18,7 @@ sql2json needs a json config file located at USER_HOME/.sql2json/config.json wit
 If you does not have config.json file sql2json asumes this one to allow you do some testing
 
 .. code-block:: json
+
     {
         "conections": {
             "default": "sqlite:///test.db"
@@ -37,13 +38,12 @@ If you need to know the specific conection string for your database, it's the sq
 sql2json usage
 ==============
 
-* Run the query named "default" in test conection "default" without a config file(USER_HOME/.sql2json/config.json)
+* Run the query named "default" in test conection "default" without a config file(USER_HOME/.sql2json/config.json): **python3 -m sql2json**
 
-python3 -m sql2json
-
-Result:
+**Result**:
 
 .. code-block:: json
+
     [
         {
             "a": 1,
@@ -51,5 +51,4 @@ Result:
         }
     ]
 
-* Run query named "my_conection", conection named "my_test_query" in sql2json config file(USER_HOME/.sql2json/config.json)
-python3 -m sql2json --name my_conection  --query my_test_query
+* Run query named "my_conection", conection named "my_test_query" in sql2json config file(USER_HOME/.sql2json/config.json): **python3 -m sql2json --name my_conection  --query my_test_query**
