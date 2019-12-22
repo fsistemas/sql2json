@@ -40,7 +40,7 @@ def load_config_file(config_path):
         }
     }
 
-def run_query_by_name(conection_name, query_name):
+def run_query_by_name(conection_name="default", query_name="default"):
     """
     Run a query given a conection_name, query_name
     """
