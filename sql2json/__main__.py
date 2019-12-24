@@ -1,16 +1,45 @@
 from __future__ import print_function
 
-import click
+import fire
 import json
 
 from .sql2json import run_query_by_name
 
-@click.command()
-@click.option("--name", default="default", help="Conexion name.")
-@click.option("--query", default="default", help="Query name.")
-def handle_run_query2json(name='default', query='default'):
+def get_first_map_value(my_dict):
+    for _, v in my_dict.items():
+        return v
+
+    return ""
+
+def handle_run_query2json(name='default', query='default', wrapper=False, first = False, value=False):
     results = run_query_by_name(name, query)
-    print(json.dumps(results))
+
+    result = None
+
+    is_empty = False
+
+    if(first):
+        if results and len(results) > 0:
+            result = get_first_map_value(results[0]) if value else results[0]
+        else:
+            result = "" if value else {}
+            is_empty = True
+    else:
+        result = results
+        is_empty = True if not results else False
+
+    if wrapper:
+        wrappered_result = {
+            'empty': is_empty,
+            'data': result
+        }
+
+        print(json.dumps(wrappered_result))
+    else:
+        if value and first:
+            print(result)
+        else:
+            print(json.dumps(result))
 
 if __name__ == "__main__":
-    handle_run_query2json()
+    fire.Fire(handle_run_query2json)
