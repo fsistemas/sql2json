@@ -3,7 +3,7 @@ from sql2json import run_query_by_name
 import json
 
 def test_version():
-    assert __version__ == '0.1.1'
+    assert __version__ == '0.1.4'
 
 def test_run_query_by_name_empty_param():
     json_results = run_query_by_name()
