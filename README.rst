@@ -78,6 +78,6 @@ sql2json usage
 
 **Result**: 100
 
-* Run query in custom conection from command line(I recomend you have database conection in config file): **python3 -m sql2json --query "SELECT 100 AS totalSalesMonth" --name "sqlite:///test.db" **
+* Run query in custom conection from command line(I recomend you have database conection in config file): **python3 -m sql2json --query "SELECT 100 AS totalSalesMonth" --name "sqlite:///test.db"**
 
 
