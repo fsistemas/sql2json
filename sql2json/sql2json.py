@@ -53,8 +53,11 @@ def run_query_by_name(conection_name="default", query_name="default"):
     config_dbs = config["conections"]
     config_queries = config["queries"]
 
-    conection_string = config_dbs.get(conection_name)
-    raw_query_string = config_queries.get(query_name)
+    #If conection_name does not exists, try to use as conection string
+    conection_string = config_dbs.get(conection_name, conection_name)
+
+    #If query_name does not exists, try to use as online query
+    raw_query_string = config_queries.get(query_name, query_name)
 
     engine = create_engine(conection_string)
 
