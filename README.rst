@@ -74,10 +74,24 @@ sql2json usage
         "totalSalesMonth": 100
     }
 
-* Run custom query from command line, only the value of first column on first object in result: **python3 -m sql2json --first --value --query "SELECT 100 AS totalSalesMonth"**
+* Run custom query from command line, only the value of a column on first object in result: **python3 -m sql2json --first --key totalSalesMonth --query "SELECT 100 AS totalSalesMonth"**
 
 **Result**: 100
 
-* Run query in custom conection from command line(I recomend you have database conection in config file): **python3 -m sql2json --query "SELECT 100 AS totalSalesMonth" --name "sqlite:///test.db"**
+* Run query in custom conection from command line(I recomend you have database conection in config file): **python3 -m sql2json --query "SELECT 100 AS totalSalesMonth" --first --key --name "sqlite:///test.db"**
 
+**Result**: 100
 
+* Run query with parameters: **python3 -m sql2json --query "SELECT 100 AS totalSalesMonth, :b AS b, :b + 1 AS b1, :x AS x, :x + :b AS xb" --first --b 5 -x 2**
+
+**Result**:
+
+.. code-block:: json
+
+    {
+        "totalSalesMonth": 100,
+        "b": 5,
+        "b1": 6,
+        "x": 2,
+        "xb": 7
+    }

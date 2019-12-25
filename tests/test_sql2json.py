@@ -1,9 +1,11 @@
-from sql2json import __version__
-from sql2json import run_query_by_name
 import json
 
+from sql2json import __version__
+from sql2json import run_query_by_name
+from sql2json import run_query2json
+
 def test_version():
-    assert __version__ == '0.1.4'
+    assert __version__ == '0.1.5'
 
 def test_run_query_by_name_empty_param():
     json_results = run_query_by_name()
@@ -32,3 +34,22 @@ def test_run_query_by_name_default():
 
     assert 1 == json_result["a"]
     assert 2 == json_result["b"]
+
+def test_run_query_raw_sql():
+    json_results = run_query_by_name("default", "SELECT 11 AS a, 22 AS b")
+    json_result = json_results[0]
+
+    assert 11 == json_result["a"]
+    assert 22 == json_result["b"]
+
+def test_run_query_raw_sql_parameters():
+    x = 10
+    y = 20
+
+    json_results = run_query_by_name("default", "SELECT :x AS a, :y AS b, :x + :y AS xy", x = x, y = y)
+    json_result = json_results[0]
+
+    assert x == json_result["a"]
+    assert y == json_result["b"]
+    assert x + y == json_result["xy"]
+

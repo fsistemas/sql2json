@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "sql2json"
-version = "0.1.4"
-description = "SQL query to JSON"
+version = "0.1.5"
+description = "Tool to run a SQL query a convert result to JSON"
 authors = ["Francisco Perez <fsistemas@gmail.com>"]
 
 repository = "https://github.com/fsistemas/sql2json"
 homepage = "https://github.com/fsistemas/sql2json"
 
-keywords = ['sql', 'json', 'tool']
+keywords = ['sql', 'json', 'tool', 'python']
 
 [tool.poetry.dependencies]
 python = "^3.5"
