@@ -44,17 +44,17 @@ jobs:
     # Same environment
     docker:
         - image: circleci/python:3.8
-      steps:
+    steps:
+      # Gets the code
+      - checkout
 
-        # Gets the code
-        - checkout
+      # Use `poetry publish` to Publish the package using username and password from CircleCI environment variables
+      # Which can be configured inside CircleCI's interface
+      - run:
+          name: Push to PyPI
+          command: |
+            poetry publish --build --username "${PYPI_USERNAME}" --password "${PYPI_PASSWORD}" --no-interaction
 
-        # Use `poetry publish` to Publish the package using username and password from CircleCI environment variables
-        # Which can be configured inside CircleCI's interface
-        - run:
-            name: Push to PyPI
-            command: |
-              poetry publish --build --username "${PYPI_USERNAME}" --password "${PYPI_PASSWORD}" --no-interaction
 # In the workflows section, we specify when we want to run the jobs defined
 workflows:
   version: 2
