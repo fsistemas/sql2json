@@ -1,8 +1,8 @@
 import json
 import os
-import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
+
 
 def map_result_proxy2list_dict(result_proxy):
     """
@@ -10,17 +10,19 @@ def map_result_proxy2list_dict(result_proxy):
     """
     return [dict(zip(row.keys(), row)) for row in result_proxy]
 
+
 def run_query(engine, raw_query, **kwargs):
     """
     Run query convert to list of dict
     """
 
     with engine.connect() as con:
-        result_proxy = con.execute(raw_query, kwargs)
+        result_proxy = con.execute(text(raw_query), kwargs)
 
         records = map_result_proxy2list_dict(result_proxy)
 
     return records
+
 
 def load_config_file(config_path):
     """ Load config file from config_path or test configuration """
@@ -40,6 +42,7 @@ def load_config_file(config_path):
         }
     }
 
+
 def get_for_key_or_first_map_value(my_dict, key=None):
     """
     Return the value in key "key" or the first value from a map
@@ -53,7 +56,11 @@ def get_for_key_or_first_map_value(my_dict, key=None):
 
     return ""
 
-def run_query_by_name(conection_name="default", query_name="default", **kwargs):
+
+def run_query_by_name(
+    conection_name="default", 
+    query_name="default",
+    **kwargs):
     """
     Run a SQL query given a conection_name, query_name
     Return a list o dicts
@@ -77,7 +84,11 @@ def run_query_by_name(conection_name="default", query_name="default", **kwargs):
 
     return run_query(engine, raw_query_string, **kwargs)
 
-def run_query2json(name='default', query='default', wrapper=False, first = False, key='', **kwargs):
+
+def run_query2json(
+    name='default', query='default', 
+    wrapper=False, first=False,
+    key='', **kwargs):
     """
     Run a SQL query given a conection_name, query_name
     Depending on parameters transform results
