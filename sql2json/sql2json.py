@@ -57,10 +57,7 @@ def get_for_key_or_first_map_value(my_dict, key=None):
     return ""
 
 
-def run_query_by_name(
-    conection_name="default", 
-    query_name="default",
-    **kwargs):
+def run_query_by_name(conection_name="default", query_name="default", **kwargs):
     """
     Run a SQL query given a conection_name, query_name
     Return a list o dicts
@@ -74,10 +71,10 @@ def run_query_by_name(
     config_dbs = config["conections"]
     config_queries = config["queries"]
 
-    #If conection_name does not exists, try to use as conection string
+    # If conection_name does not exists, try to use as conection string
     conection_string = config_dbs.get(conection_name, conection_name)
 
-    #If query_name does not exists, try to use as online query
+    # If query_name does not exists, try to use as online query
     raw_query_string = config_queries.get(query_name, query_name)
 
     engine = create_engine(conection_string)
@@ -85,10 +82,7 @@ def run_query_by_name(
     return run_query(engine, raw_query_string, **kwargs)
 
 
-def run_query2json(
-    name='default', query='default', 
-    wrapper=False, first=False,
-    key='', **kwargs):
+def run_query2json(name='default', query='default', wrapper=False, first=False, key='', **kwargs):
     """
     Run a SQL query given a conection_name, query_name
     Depending on parameters transform results
