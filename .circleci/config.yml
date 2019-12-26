@@ -1,13 +1,12 @@
 version: 2
 
 jobs:
-
   # Building and testing the project
   # Useful when a PR is open, for example
   build-and-test:
-    # Our environment, Python 3.6.8
+    # Our environment, Python 3.6.4
     docker:
-      - image: circleci/python:3.6.8
+      - image: circleci/python:3.6.4
 
     # The steps for our build-and-test
     steps:
@@ -44,7 +43,7 @@ jobs:
   deployment:
     # Same environment
     docker:
-        - image: circleci/python:3.6.8
+        - image: circleci/python:3.6.4
       steps:
 
         # Gets the code
