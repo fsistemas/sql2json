@@ -95,3 +95,26 @@ sql2json usage
         "x": 2,
         "xb": 7
     }
+
+* Run query with dynamic parameters and formulas: **python3 -m sql2json --query "SELECT COUNT(*) AS qty FROM ( SELECT '2019-12-31' AS creation_date UNION ALL SELECT '2020-01-01' AS creation_date UNION ALL SELECT '2020-01-02' AS creation_date UNION ALL SELECT '2020-01-03' AS creation_date UNION ALL SELECT '2020-01-04' AS creation_date UNION ALL SELECT '2020-01-05' AS creation_date ) data WHERE data.creation_date > :date_from" --date_from "CURRENT_DATE-2" --first --key qty"**
+
+**Result**: 6
+
+**NOTE**: In the previous query the results can be different(Current date)
+
+You can use CURRENT_DATE, START_CURRENT_MONTH and END_CURRENT_MONTH
+You can use operator like + or -
+You can use a custom format to your date parameter calculation. Default is %Y-%m-%d
+
+How use format in your dynamic date parameter formulas
+======================================================
+
+Default format: CURRENT_DATE
+Start date: CURRENT_DATE-1|%Y-%m-%d 00:00:00
+End date: CURRENT_DATE+1|%Y-%m-%d 23:59:59
+
+In this case +1, -1 means +1 hor, -1 hour
+For START_CURRENT_MONTH and END_CURRENT_MONTH, +1, -5 means months
+
+You can use valid python date formats.
+

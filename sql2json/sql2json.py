@@ -1,7 +1,9 @@
+import datetime
 import json
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
+from .parameter import parse_parameter
 
 
 def map_result_proxy2list_dict(result_proxy):
@@ -16,8 +18,13 @@ def run_query(engine, raw_query, **kwargs):
     Run query convert to list of dict
     """
 
+    current_date = datetime.date.today()
+
+    # Parse/format parameters before use
+    parameters = {k: parse_parameter(v, current_date) for k, v in kwargs.items()}
+
     with engine.connect() as con:
-        result_proxy = con.execute(text(raw_query), kwargs)
+        result_proxy = con.execute(text(raw_query), parameters)
 
         records = map_result_proxy2list_dict(result_proxy)
 
