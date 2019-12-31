@@ -117,4 +117,3 @@ In this case +1, -1 means +1 hor, -1 hour
 For START_CURRENT_MONTH and END_CURRENT_MONTH, +1, -5 means months
 
 You can use valid python date formats.
-

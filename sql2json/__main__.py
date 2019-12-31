@@ -1,11 +1,15 @@
 from __future__ import print_function
 
-import fire
 import json
+
+import fire
+
 from .sql2json import run_query2json
 
 
-def handle_run_query2json(name='default', query='default', wrapper=False, first=False, key=False, **kwargs):
+def handle_run_query2json(
+    name="default", query="default", wrapper=False, first=False, key=False, **kwargs
+):
     result = run_query2json(name, query, wrapper, first, key, **kwargs)
 
     if key and first:

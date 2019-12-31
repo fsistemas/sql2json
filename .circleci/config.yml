@@ -18,7 +18,7 @@ jobs:
       # if the text key `deps-{{ checksum "poetry.lock" }}` changes (and it WILL change everytime poetry.lock is updated since we rely on its checksum)
       # and poetry.lock is updated every time we add a new dependency to our project
       - restore_cache:
-          keys: 
+          keys:
             - deps-{{ checksum "poetry.lock" }}
 
       # Let's install the dependencies
@@ -26,15 +26,15 @@ jobs:
           name: Install Dependencies
           command: |
             poetry install
-      
+
       # Save's the specified path as a cache. This is the path Poetry uses to install the dependencies
       # So if you don't install anything new, this folder won't change and the cache will be effective
       - save_cache:
           key: deps-{{ checksum "poetry.lock" }}
-          paths: 
+          paths:
             - /home/circleci/.cache/pypoetry/virtualenvs
 
-      # Another step, run flake8 
+      # Another step, run flake8
       - run:
           name: Run flake8
           command: |
@@ -63,7 +63,7 @@ workflows:
   build-and-test-workflow:
     jobs:
       - build-and-test
-  
+
   # The deployment workflow publishes the package
   deployment-workflow:
     jobs:

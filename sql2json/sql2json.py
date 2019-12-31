@@ -1,8 +1,10 @@
 import datetime
 import json
 import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
+
 from .parameter import parse_parameter
 
 
@@ -41,12 +43,8 @@ def load_config_file(config_path):
         pass
 
     return {
-        "conections": {
-            "default": "sqlite:///test.db"
-        },
-        "queries": {
-            "default": "SELECT 1 AS a, 2 AS b"
-        }
+        "conections": {"default": "sqlite:///test.db"},
+        "queries": {"default": "SELECT 1 AS a, 2 AS b"},
     }
 
 
@@ -69,7 +67,7 @@ def run_query_by_name(conection_name="default", query_name="default", **kwargs):
     Run a SQL query given a conection_name, query_name
     Return a list o dicts
     """
-    user_home = os.environ['HOME']
+    user_home = os.environ["HOME"]
 
     config_path = user_home + "/.sql2json/config.json"
 
@@ -89,7 +87,9 @@ def run_query_by_name(conection_name="default", query_name="default", **kwargs):
     return run_query(engine, raw_query_string, **kwargs)
 
 
-def run_query2json(name='default', query='default', wrapper=False, first=False, key='', **kwargs):
+def run_query2json(
+    name="default", query="default", wrapper=False, first=False, key="", **kwargs
+):
     """
     Run a SQL query given a conection_name, query_name
     Depending on parameters transform results
@@ -106,9 +106,11 @@ def run_query2json(name='default', query='default', wrapper=False, first=False, 
 
     is_empty = False
 
-    if(first):
+    if first:
         if results and len(results) > 0:
-            result = get_for_key_or_first_map_value(results[0], key) if key else results[0]
+            result = (
+                get_for_key_or_first_map_value(results[0], key) if key else results[0]
+            )
         else:
             result = "" if key else {}
             is_empty = True
@@ -117,10 +119,7 @@ def run_query2json(name='default', query='default', wrapper=False, first=False, 
         is_empty = True if not results else False
 
     if wrapper:
-        wrappered_result = {
-            'empty': is_empty,
-            'data': result
-        }
+        wrappered_result = {"empty": is_empty, "data": result}
 
         return wrappered_result
     else:
