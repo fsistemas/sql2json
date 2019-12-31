@@ -1,5 +1,4 @@
 import datetime
-from datetime import timedelta
 from sql2json.parameter import parse_field, parse_formula, parse_parameter
 
 
