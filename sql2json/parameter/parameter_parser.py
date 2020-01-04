@@ -34,7 +34,7 @@ def parse_field(field, to_add, current_date, date_format="%Y-%m-%d"):
             date_format
         )
     else:
-        raise ValueError("Field is not valid")
+        return field
 
 
 def parse_formula(formula, current_date, date_format="%Y-%m-%d"):
