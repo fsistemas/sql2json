@@ -48,6 +48,20 @@ def load_config_file(config_path):
     }
 
 
+def load_query_from_file(sql_file_path):
+    """
+    Read file and return content as string
+    """
+
+    file_name = sql_file_path
+
+    if sql_file_path.startswith("@"):
+        file_name = sql_file_path[1:]
+
+    with open(file_name, "r") as file:
+        return file.read()
+
+
 def get_for_key_or_first_map_value(my_dict, key=None):
     """
     Return the value in key "key" or the first value from a map
@@ -68,19 +82,24 @@ def run_query_by_name(conection_name="default", query_name="default", **kwargs):
     Return a list o dicts
     """
     user_home = os.environ["HOME"]
+    user_home_config_path = user_home + "/.sql2json/config.json"
 
-    config_path = user_home + "/.sql2json/config.json"
+    config_path = kwargs.get("config", user_home_config_path)
 
     config = load_config_file(config_path)
 
-    config_dbs = config["conections"]
-    config_queries = config["queries"]
+    config_dbs = config.get("conections", {})
+    config_queries = config.get("queries", {})
 
     # If conection_name does not exists, try to use as conection string
     conection_string = config_dbs.get(conection_name, conection_name)
 
     # If query_name does not exists, try to use as online query
     raw_query_string = config_queries.get(query_name, query_name)
+
+    if raw_query_string.startswith("@"):
+        # Load query from file
+        raw_query_string = load_query_from_file(raw_query_string[1:])
 
     engine = create_engine(conection_string)
 
@@ -104,8 +123,6 @@ def run_query2json(
 
     result = None
 
-    is_empty = False
-
     if first:
         if results and len(results) > 0:
             result = (
@@ -113,13 +130,11 @@ def run_query2json(
             )
         else:
             result = "" if key else {}
-            is_empty = True
     else:
         result = results
-        is_empty = True if not results else False
 
     if wrapper:
-        wrappered_result = {"empty": is_empty, "data": result}
+        wrappered_result = {"data": result}
 
         return wrappered_result
     else:

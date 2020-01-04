@@ -106,14 +106,21 @@ You can use CURRENT_DATE, START_CURRENT_MONTH and END_CURRENT_MONTH
 You can use operator like + or -
 You can use a custom format to your date parameter calculation. Default is %Y-%m-%d
 
-How use format in your dynamic date parameter formulas
-======================================================
+How to use format in your dynamic date parameter formulas
+=========================================================
 
-Default format: CURRENT_DATE
+Default format: %Y-%m-%d
 Start date: CURRENT_DATE-1|%Y-%m-%d 00:00:00
 End date: CURRENT_DATE+1|%Y-%m-%d 23:59:59
 
-In this case +1, -1 means +1 hor, -1 hour
-For START_CURRENT_MONTH and END_CURRENT_MONTH, +1, -5 means months
+In this case +1, -1 means +1 hour, -1 hour
+For START_CURRENT_MONTH and END_CURRENT_MONTH, +1, -5 means +1 hour, -5 months
 
 You can use valid python date formats.
+
+Query in external file
+======================
+
+JSON format does not acept multiline strings, when you have a long query you cam move your sql to a .sql file
+Then reference your file with your sql query in config.json or in --query parameter using this syntax: @YOUR_SQL_FILE_PATH.
+Example: @/Users/myuser/myproject/my-sql-query.sql, that means that sql2json can load your sql query from file /Users/myuser/myproject/my-sql-query.sql
