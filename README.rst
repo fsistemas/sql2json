@@ -16,6 +16,8 @@ sql2json needs a json config file located at USER_HOME/.sql2json/config.json wit
 
 If you does not have config.json file sql2json asumes this one to allow you do some testing
 
+Also you can use a custom config file using --config PATH_TO_YOUR config file
+
 .. code-block:: json
 
     {
