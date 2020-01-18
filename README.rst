@@ -3,6 +3,7 @@ sql2json usage
 ==============
 
 sql2json is a tool to query a sql database and write an output in JSON format in standard output.
+This tool is focused to use to automate command line apps or cron jobs to extract data from sql databases
 
 sql2json install
 ================
@@ -118,7 +119,53 @@ End date: CURRENT_DATE+1|%Y-%m-%d 23:59:59
 In this case +1, -1 means +1 hour, -1 hour
 For START_CURRENT_MONTH and END_CURRENT_MONTH, +1, -5 means +1 hour, -5 months
 
-You can use valid python date formats.
+You can use your database formats.
+
+Map results as key, value
+=========================
+
+Supose that you made a query to get month name and sales amount.
+You will get:
+
+.. code-block:: json
+
+    [
+        {
+            "month": "January",
+            "sales": 100
+        },
+        {
+            "month": "February",
+            "sales": 200
+        },
+        {
+            "month": "March",
+            "sales": 300
+        }
+    ]
+
+What if you want some like:
+
+.. code-block:: json
+
+    [
+        {
+            "January": 100
+        },
+        {
+            "February": 200
+        },
+        {
+            "March": 300
+        }
+    ]
+
+You can use sql2json as always. So use sql2json with --key month --value sales
+
+Use your database JSON functions like JSON_OBJECT, JSON_ARRAY or string columns with JSON content
+=================================================================================================
+
+You can use --jsonkeys = "jsoncolumn1, jsoncolumn2" to inform sql2json to parse jsoncolumn1, jsoncolumn2 as JSON not as string.
 
 Query in external file
 ======================

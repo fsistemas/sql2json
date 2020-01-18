@@ -106,8 +106,43 @@ def run_query_by_name(conection_name="default", query_name="default", **kwargs):
     return run_query(engine, raw_query_string, **kwargs)
 
 
+def parse_json_columns(result, jsonkeys=""):
+    """
+    result: dict, row from database
+    jsonkeys: Comma separated json columns in result
+    Convert to json columns listed in jsonkeys
+    """
+
+    jsonkeys_list = []
+
+    if type(jsonkeys) is tuple:
+        jsonkeys_list = [key.strip() for key in jsonkeys]
+    elif type(jsonkeys) is str:
+        jsonkeys_list = [key.strip() for key in jsonkeys.split(",")]
+
+    if not jsonkeys_list:
+        return result
+
+    response = {}
+
+    for key in result:
+        if key in jsonkeys_list:
+            response[key] = json.loads(result[key])
+        else:
+            response[key] = result[key]
+
+    return response
+
+
 def run_query2json(
-    name="default", query="default", wrapper=False, first=False, key="", **kwargs
+    name="default",
+    query="default",
+    wrapper=False,
+    first=False,
+    key="",
+    value="",
+    jsonkeys="",
+    **kwargs
 ):
     """
     Run a SQL query given a conection_name, query_name
@@ -116,22 +151,39 @@ def run_query2json(
     query: Query  name in config file or raw sql query
     wrapper: When you can't acept an array this help to wrap result on a object with atribute data
     first: For return the first element only
-    key: column name to get or first column on results, useful only with first
+    key: column name to usa as key with value. If you use only key then return value
+    value: column name to use as value. Useful only with key
+    jsonkeys: Coma separated columns what are json object/array in database
     """
 
-    results = run_query_by_name(name, query, **kwargs)
+    unparsed_results = run_query_by_name(name, query, **kwargs)
+
+    results = [parse_json_columns(result, jsonkeys) for result in unparsed_results]
 
     result = None
 
     if first:
         if results and len(results) > 0:
-            result = (
-                get_for_key_or_first_map_value(results[0], key) if key else results[0]
-            )
+            item = results[0]
+
+            if key and value:
+                result = {item.get(key): item.get(value)}
+            else:
+                result = get_for_key_or_first_map_value(item, key) if key else item
         else:
-            result = "" if key else {}
+            result = "" if key and not value else {}
     else:
-        result = results
+        if key and value:
+            result = [
+                {item.get(key): item.get(value)}
+                if key and key in item and value in item
+                else item
+                for item in results
+            ]
+        else:
+            result = [
+                item.get(key) if key and key in item else item for item in results
+            ]
 
     if wrapper:
         wrappered_result = {"data": result}
