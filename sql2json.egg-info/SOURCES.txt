@@ -1,4 +1,4 @@
-README.rst
+README.md
 setup.py
 sql2json/__init__.py
 sql2json/__init__.pyc
