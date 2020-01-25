@@ -74,7 +74,7 @@ Output:
 ]
 ```
 
-### I don't wat an array i want an object with an atribute with the results, useful to generate in format to post to geckoboard
+### I don't wat an array, i want an object with an atribute with the results, useful to generate in format to post to geckoboard
 
 python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH-1" --wrapper
 
