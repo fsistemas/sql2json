@@ -1,6 +1,6 @@
 Metadata-Version: 1.2
 Name: sql2json
-Version: 0.1.8
+Version: 0.1.9
 Summary: Tool to run a SQL query and convert result to JSON
 Home-page: https://github.com/fsistemas/sql2json
 Author: Francisco Pérez
