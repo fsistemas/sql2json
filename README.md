@@ -1,12 +1,21 @@
-# Sql2json: sql2json is a tool to query a sql database and write result in JSON format in standard output
+# Sql2json: sql2json is a tool to query a sql database and write result in JSON or CSV format in standard output or external file
 
 sql2json help you to automate repetitive tasks.
 For example i need a cronjob to extract yesterday sales and sent it to geckoboard.
 
 This tool is focused to use to automate command line apps or cron jobs to extract data from sql databases
 
+## Why sql2json if you can write to csv and excel file
+Good question. That was true until version 0.1.9. After some time i need to support csv files too, but i don't want to change the library name(sql2what or sqltowhat). Or create some new like sql2csv and sql2excel.
+
 ## How install sql2json
 * **python3**: pip3 install sql2json
+
+## Default output format
+The default output format is json.
+
+## Limitations
+- CSV works only with output file flag --output
 
 ## sql2json config file
 
@@ -189,3 +198,53 @@ python3 -m sql2json --name mysql --query "@/Users/myusername/myproject/my-super-
 You do't need to have all your queries in config file
 
 python3 -m sql2json --name mysql --query "SELECT NOW() AS date" --first --key date
+
+### Write data to a csv file
+
+python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH-1" --format=csv --output Sales
+
+```
+Output:
+Sales.csv
+```
+
+### Write data to an excel file
+
+python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH-1" --format=excel --output Sales
+
+```
+Output:
+Sales.xls
+```
+
+### Write data to a json file
+
+python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH-1" --format=json --output Sales
+
+Output:
+```
+Sales.json
+```
+
+### Write data to a file with custom filename using formula
+
+python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH" --format=csv --output Sales_{START_CURRENT_MONTH}_{CURRENT_DATE}
+
+Output:
+```
+If Current Date is "2020-05-24"
+
+Sales_2020-05-01_2020-05-24.csv
+```
+
+
+python3 -m sql2json --name mysql --query sales_month_since --date_from "CURRENT_DATE" --format=csv --output sales/Sales_{CURRENT_DATE}
+
+Output:
+```
+If Current Date is "2020-05-24"
+
+File Sales_2020-05-24.csv inside folder sales. sales/Sales_2020-05-24.csv
+```
+
+**IMPORTANT**: The sales folder is not created. You need to create it in your own.

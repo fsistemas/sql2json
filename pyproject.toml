@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sql2json"
-version = "0.1.9"
+version = "0.1.10"
 description = "Tool to run a SQL query a convert result to JSON"
 authors = ["Francisco Perez <fsistemas@gmail.com>"]
 
