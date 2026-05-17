@@ -2,7 +2,7 @@ from sql2json import __version__, run_query_by_name
 
 
 def test_version():
-    assert __version__ == "0.1.10"
+    assert __version__ == "0.1.11"
 
 
 def test_run_query_by_name_empty_param():

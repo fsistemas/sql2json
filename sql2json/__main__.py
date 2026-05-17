@@ -3,11 +3,16 @@ from __future__ import print_function
 import csv
 import datetime
 import json
+import sys
 
 import fire
 
 from .parameter import parse_parameter
-from .sql2json import run_query2json
+from .sql2json import (
+    list_connections as _list_connections,
+    list_queries as _list_queries,
+    run_query2json,
+)
 
 
 def _parse_filename_after_brackets(part, current_date):
@@ -19,9 +24,7 @@ def _parse_filename_after_brackets(part, current_date):
 
 def parse_filename(file_name, current_date):
     parts = file_name.split("{")
-
     results = [_parse_filename_after_brackets(part, current_date) for part in parts]
-
     return "".join(results)
 
 
@@ -48,17 +51,13 @@ def save_csv(rows, file_name, dialect, key):
     )
 
     first_row = None
-
     final_rows = None
 
     try:
         if isinstance(rows, str):
             first_row = {}
-
             final_key = key if key else "key"
-
             first_row[final_key] = rows
-
             final_rows = [first_row]
         elif isinstance(rows, dict):
             first_row = rows
@@ -93,24 +92,41 @@ def handle_run_query2json(
     jsonkeys="",
     format="json",
     output=None,
+    list_connections=False,
+    list_queries=False,
     **kwargs
 ):
-    result = run_query2json(name, query, wrapper, first, key, value, jsonkeys, **kwargs)
+    try:
+        if list_connections:
+            config_path = kwargs.get("config")
+            print(json.dumps(_list_connections(config_path)))
+            return
 
-    if output:
-        if "csv" == format:
-            save_csv(result, output, "csv", key)
-        if "excel" == format:
-            save_csv(result, output, "excel", key)
+        if list_queries:
+            config_path = kwargs.get("config")
+            print(json.dumps(_list_queries(config_path)))
+            return
+
+        result = run_query2json(name, query, wrapper, first, key, value, jsonkeys, **kwargs)
+
+        if output:
+            if "csv" == format:
+                save_csv(result, output, "csv", key)
+            if "excel" == format:
+                save_csv(result, output, "excel", key)
+            else:
+                save_json(result, output)
         else:
-            save_json(result, output)
-    else:
-        if key and value and first:
-            print(json.dumps(result))
-        elif key and first:
-            print(result)
-        else:
-            print(json.dumps(result))
+            if key and value and first:
+                print(json.dumps(result))
+            elif key and first:
+                print(result)
+            else:
+                print(json.dumps(result))
+
+    except Exception as e:
+        print(json.dumps({"error": str(e), "type": type(e).__name__}), file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

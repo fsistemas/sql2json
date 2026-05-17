@@ -1,0 +1,69 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Commands
+
+```bash
+# Install dependencies
+uv sync
+
+# Run all tests
+uv run pytest
+
+# Run a single test
+uv run pytest tests/test_parameter.py::test_parse_parameter
+
+# Lint
+uv run flake8
+
+# Format
+uv run black .
+
+# Run the CLI tool
+python -m sql2json --name default --query default
+```
+
+## Architecture
+
+`sql2json` is a CLI tool that runs SQL queries via SQLAlchemy and outputs JSON, CSV, or Excel. It is invoked as `python -m sql2json` (entry point: `__main__.py` using `fire`).
+
+### Data flow
+
+```
+CLI args (fire) → handle_run_query2json() [__main__.py]
+  → run_query2json() [sql2json.py]       # applies result transformations (first/key/value/wrapper/jsonkeys)
+    → run_query_by_name()                # resolves config, loads query by name or from .sql file
+      → run_query()                      # executes via SQLAlchemy, kwargs become SQL :params
+        → parse_parameter() per kwarg   # translates date variable strings to real dates
+```
+
+Extra `**kwargs` passed on the CLI (e.g. `--date_from CURRENT_DATE-1`) flow through as both SQL bind parameters (`:date_from` in the query) and are resolved by `parse_parameter` before execution.
+
+### Date variable system (`parameter/parameter_parser.py`)
+
+CLI parameter values that match built-in variables are resolved before being passed to the database:
+
+- `CURRENT_DATE`, `START_CURRENT_MONTH`, `END_CURRENT_MONTH`, `START_CURRENT_YEAR`, `END_CURRENT_YEAR`
+- Arithmetic: `CURRENT_DATE-10`, `START_CURRENT_MONTH+1` (days for DATE, months for MONTH vars, years for YEAR vars)
+- Custom format via `|` separator: `CURRENT_DATE|%Y-%m-%d 00:00:00`
+
+### Config file
+
+Default path: `~/.sql2json/config.json`. If missing, falls back to an in-memory SQLite DB with `SELECT 1 AS a, 2 AS b` (this is how tests run — no external DB needed).
+
+**Note:** The config accepts both `"connections"` (correct spelling) and `"conections"` (legacy typo). `"connections"` takes priority when both keys are present. Existing configs with `"conections"` continue to work.
+
+Query values prefixed with `@` are treated as file paths to `.sql` files.
+
+### Output transformations (`run_query2json`)
+
+| Flag | Effect |
+|---|---|
+| `--first` | Return only the first row |
+| `--key` | Extract a single column as the value (or use as dict key with `--value`) |
+| `--value` | Used with `--key` to produce `{key_col: value_col}` dicts |
+| `--wrapper` | Wrap the result list in `{"data": [...]}` |
+| `--jsonkeys` | Comma-separated column names whose string values should be parsed as JSON |
+| `--format` | `json` (default), `csv`, or `excel` |
+| `--output` | Save to file instead of printing; filename supports `{CURRENT_DATE}` etc. |

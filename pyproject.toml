@@ -1,29 +1,24 @@
-[tool.poetry]
+[project]
 name = "sql2json"
-version = "0.1.10"
-description = "Tool to run a SQL query a convert result to JSON"
-authors = ["Francisco Perez <fsistemas@gmail.com>"]
+version = "0.1.11"
+description = "Tool to run a SQL query and convert result to JSON"
+authors = [
+    { name = "Francisco Perez", email = "fsistemas@gmail.com" }
+]
+dependencies = [
+    "SQLAlchemy>=1.3.12", "fire>=0.2.1", "python-dateutil>=2.8.1",
+]
+requires-python = ">=3.10"
 
-readme = "README.md"
-
-repository = "https://github.com/fsistemas/sql2json"
-homepage = "https://github.com/fsistemas/sql2json"
-
-keywords = ['sql', 'json', 'tool', 'python', 'automation']
-
-[tool.poetry.dependencies]
-python = "^3.5"
-SQLAlchemy = "^1.3.12"
-fire = "^0.2.1"
-python-dateutil = "^2.8.1"
-
-[tool.poetry.dev-dependencies]
-flake8 = "^3.7.9"
-mypy = "^0.761"
-pytest = "^5.3.2"
-black = { version = "^19.10b0", python = "^3.6" }
-pre-commit = "^1.10"
+[project.optional-dependencies]
+dev = [
+    "flake8>=3.7.9",
+    "mypy>=0.761",
+    "pytest>=5.3.2",
+    "black>=19.10b0",
+    "pre-commit>=1.10",
+]
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

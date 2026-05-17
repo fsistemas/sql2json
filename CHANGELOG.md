@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.11] - 2026-05-16
+
+### Added
+- `--list-connections`: prints a JSON array of configured connection names and exits
+- `--list-queries`: prints a JSON array of configured query names and exits
+- `list_connections(config_path)` and `list_queries(config_path)` exported from the Python package
+- Config file lookup now checks `./sql2json.json` and `./.sql2json/config.json` in the current directory before falling back to `~/.sql2json/config.json`
+- Structured JSON error output on stderr (`{"error": "...", "type": "..."}`) when the CLI fails; stdout remains empty on error and exit code is non-zero
+
+### Fixed
+- SQLAlchemy 2.x compatibility: `row.keys()` replaced with `result_proxy.keys()` in row mapping
+- `--config` kwarg is now popped before being forwarded to SQLAlchemy; previously it was incorrectly passed as a SQL bind parameter
+- Build backend corrected from the non-existent `uv.build` to `hatchling`
+
+### Changed
+- AGENTS.md rewritten: removed references to non-existent `--description` and `--format dict` flags; added discovery, error handling, and Python API sections
+
 ## [0.1.10] - 2020-05-25
 
 ### Added
