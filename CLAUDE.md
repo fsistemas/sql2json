@@ -52,7 +52,7 @@ CLI parameter values that match built-in variables are resolved before being pas
 
 Default path: `~/.sql2json/config.json`. If missing, falls back to an in-memory SQLite DB with `SELECT 1 AS a, 2 AS b` (this is how tests run — no external DB needed).
 
-**Note:** The config key is `"conections"` (one 'n') — this spelling is baked into the code and must not be changed.
+**Note:** The config accepts both `"connections"` (correct spelling) and `"conections"` (legacy typo). `"connections"` takes priority when both keys are present. Existing configs with `"conections"` continue to work.
 
 Query values prefixed with `@` are treated as file paths to `.sql` files.
 

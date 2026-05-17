@@ -1,250 +1,279 @@
-# Sql2json: sql2json is a tool to query a sql database and write result in JSON or CSV format in standard output or external file
+# sql2json
 
-sql2json help you to automate repetitive tasks.
-For example i need a cronjob to extract yesterday sales and sent it to geckoboard.
+Run SQL queries and get JSON (or CSV) on stdout — pipe it anywhere.
 
-This tool is focused to use to automate command line apps or cron jobs to extract data from sql databases
+`sql2json` connects to any SQLAlchemy-supported database, executes a query, and writes the results as JSON to standard output. No server, no framework, no boilerplate.
 
-## Why sql2json if you can write to csv and excel file
-Good question. That was true until version 0.1.9. After some time i need to support csv files too, but i don't want to change the library name(sql2what or sqltowhat). Or create some new like sql2csv and sql2excel.
-
-## How install sql2json
-* **python3**: pip3 install sql2json
-
-## Default output format
-The default output format is json.
-
-## Limitations
-- CSV works only with output file flag --output
-
-## sql2json config file
-
-sql2json by default use a config file located at USER_HOME/.sql2json/config.json
-
-config.json structure:
-
+```bash
+python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1"
+# → [{"month": "January", "sales": 5000}, {"month": "February", "sales": 3000}]
 ```
+
+## Use cases
+
+- **Scheduled reports**: run a cron job that pulls yesterday's sales and posts the JSON to a dashboard (Geckoboard, Grafana, etc.)
+- **Shell pipelines**: pipe query results into `jq`, `curl`, or any CLI tool that speaks JSON
+- **AI agent data retrieval**: let an LLM agent query your database with a single subprocess call — see [AGENTS.md](AGENTS.md)
+- **ETL glue**: extract rows as JSON, transform with standard tools, load elsewhere
+- **Monitoring & alerting**: script threshold checks against live database metrics
+
+## Install
+
+```bash
+pip install sql2json
+```
+
+## Quick start
+
+**1. Create the config file:**
+
+```bash
+mkdir -p ~/.sql2json
+cat > ~/.sql2json/config.json << 'EOF'
 {
-    "conections": {
+    "connections": {
+        "default": "sqlite:///mydb.sqlite"
+    },
+    "queries": {
+        "default": "SELECT 1 AS a, 2 AS b"
+    }
+}
+EOF
+```
+
+**2. Run a query:**
+
+```bash
+python -m sql2json
+# → [{"a": 1, "b": 2}]
+```
+
+**3. Try inline SQL:**
+
+```bash
+python -m sql2json --name default --query "SELECT date('now') AS today"
+# → [{"today": "2026-05-16"}]
+```
+
+## Configuration
+
+By default `sql2json` looks for a config file in this order:
+
+1. `./sql2json.json` (current directory)
+2. `./.sql2json/config.json` (current directory)
+3. `~/.sql2json/config.json` (home directory)
+
+Use `--config /path/to/config.json` to override.
+
+### Config file format
+
+```json
+{
+    "connections": {
         "default": "sqlite:///test.db",
-        "postgress": "postgresql://scott:tiger@localhost:5432/mydatabase",
+        "postgres": "postgresql://scott:tiger@localhost:5432/mydb",
         "mysql": "mysql://scott:tiger@localhost/foo"
     },
     "queries": {
         "default": "SELECT 1 AS a, 2 AS b",
-        "sales_month_since": "SELECT inv.month, SUM(inv.amount) AS sales FROM invoices inv WHERE inv.date >= :date_from ",
-        "total_sales_since": "SELECT SUM(inv.amount) AS sales FROM invoices inv WHERE inv.date >= :date_from ",
-        "long_query": "@FULL_PATH_TO_SQL_FILE",
-		"json": "SELECT JSON_OBJECT('id', 87, 'name', 'carrot') AS json",
-		"jsonarray": "SELECT JSON_ARRAY(1, 'abc', NULL, TRUE) AS jsonarray, JSON_OBJECT('id', 87, 'name', 'carrot') AS jsonobject",
-        "operation_parameters": "@/Users/myusername/myproject/my-super-query.sql"
+        "sales_monthly": "SELECT inv.month, SUM(inv.amount) AS sales FROM invoices inv WHERE inv.date >= :date_from",
+        "total_sales": "SELECT SUM(inv.amount) AS sales FROM invoices inv WHERE inv.date >= :date_from",
+        "long_query": "@/path/to/my_query.sql"
     }
 }
 ```
 
-## Use a config.json in a different path
+> **Note:** Both `"connections"` and `"conections"` (legacy typo) are accepted. Existing config files do not need to be updated.
 
-You can use sql2json --config PATH_TO_YOUR_CONFIG_FILE
+Connection strings follow [SQLAlchemy URL format](https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls). Query values starting with `@` are treated as paths to `.sql` files.
 
-## Available variables to do your life easy:
-- START_CURRENT_MONTH: Date the first day of current month
-- CURRENT_DATE: Current Date
-- END_CURRENT_MONTH: Date the last day of current month
-- START_CURRENT_YEAR: First day of current year
-- END_CURRENT_YEAR: First day of current year
+## CLI reference
 
-## Operations in variables
-- You can use + or - operator in your querys with variables CURRENT_DATE, START_CURRENT_MONTH, END_CURRENT_MONTH
-- +1, -1 in CURRENT_DATE mean +1 day, -1 day
-- +1, -1 in START_CURRENT_MONTH, END_CURRENT_MONTH mean +1 month, -1 month
-- +1, -1 in START_CURRENT_YEAR, END_CURRENT_YEAR mean +1 year, -1 year
+```bash
+python -m sql2json [options] [--param value ...]
+```
 
-## Date formats to CURRENT_DATE, START_CURRENT_MONTH, END_CURRENT_MONTH, START_CURRENT_YEAR, END_CURRENT_YEAR
-You can use date format supported by python datetime.strftime function, default is %Y-%m-%d
+| Flag | Default | Description |
+|---|---|---|
+| `--name` | `default` | Connection name from config, or a raw SQLAlchemy URL |
+| `--query` | `default` | Named query, raw SQL string, or `@/path/file.sql` |
+| `--config` | _(lookup order above)_ | Path to a specific config file |
+| `--first` | `False` | Return only the first row (object, not array) |
+| `--key` | `""` | Extract one column as value (scalar with `--first`), or dict key (with `--value`) |
+| `--value` | `""` | Used with `--key` to produce `{key_col: value_col}` dicts |
+| `--wrapper` | `False` | Wrap result in `{"data": [...]}` |
+| `--jsonkeys` | `""` | Comma-separated columns whose string values should be parsed as JSON |
+| `--format` | `json` | Output format: `json`, `csv`, `excel` |
+| `--output` | _(stdout)_ | Save to file; filename supports `{CURRENT_DATE}` etc. |
+| `--list-connections` | — | Print JSON array of configured connection names and exit |
+| `--list-queries` | — | Print JSON array of configured query names and exit |
 
-## How to run queries using sql2json:
+Extra `--key value` flags become SQL bind parameters (`:key` in your query).
 
-### Run query sales_month in database conection mysql:
+### Discovery
 
-python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH-1"
+Before writing a query, inspect what is configured:
 
-Output:
+```bash
+python -m sql2json --list-connections
+# → ["default", "mysql", "reporting"]
+
+python -m sql2json --list-queries
+# → ["default", "sales_monthly", "total_sales"]
+```
+
+## Date variables
+
+Extra parameters whose values match a built-in variable are resolved to real dates before the query runs:
+
+| Variable | Resolves to |
+|---|---|
+| `CURRENT_DATE` | Today's date |
+| `START_CURRENT_MONTH` | First day of the current month |
+| `END_CURRENT_MONTH` | Last day of the current month |
+| `START_CURRENT_YEAR` | First day of the current year |
+| `END_CURRENT_YEAR` | Last day of the current year |
+
+**Arithmetic** — the unit depends on the variable:
 
 ```
+CURRENT_DATE-7          → 7 days ago
+START_CURRENT_MONTH+1   → first day of next month
+START_CURRENT_YEAR-1    → first day of last year
+```
+
+**Custom format** — append `|strftime_format`:
+
+```bash
+--min_date "CURRENT_DATE|%Y-%m-%d 00:00:00"
+# → "2026-05-16 00:00:00"
+
+--min_date "START_CURRENT_YEAR|%Y-%m-%d 00:00:00"
+# → "2026-01-01 00:00:00"
+```
+
+## Output transformations
+
+### Array of objects (default)
+
+```bash
+python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1"
+```
+```json
 [
-    {
-        "month": "January",
-        "sales": 5000
-    },
-    {
-        "month": "February",
-        "sales": 3000
-    }
+    {"month": "January", "sales": 5000},
+    {"month": "February", "sales": 3000}
 ]
 ```
 
-### I don't wat an array, i want an object with an atribute with the results, useful to generate in format to post to geckoboard
+### First row only (`--first`)
 
-python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH-1" --wrapper
-
-Output:
-
+```bash
+python -m sql2json --name mysql --query total_sales --date_from "CURRENT_DATE-10" --first
 ```
+```json
+{"sales": 500}
+```
+
+### Single value (`--first --key`)
+
+```bash
+python -m sql2json --name mysql --query total_sales --date_from "CURRENT_DATE-10" --first --key sales
+```
+```
+500
+```
+
+### Key-value pairs (`--key --value`)
+
+```bash
+python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --key month --value sales
+```
+```json
+[
+    {"January": 5000},
+    {"February": 3000}
+]
+```
+
+### Wrapped for dashboards (`--wrapper`)
+
+```bash
+python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --wrapper
+```
+```json
 {
     "data": [
-        {
-            "month": "January",
-            "sales": 5000
-        },
-        {
-            "month": "February",
-            "sales": 3000
-        }
+        {"month": "January", "sales": 5000},
+        {"month": "February", "sales": 3000}
     ]
 }
 ```
 
-### Run query sales_month in database conection mysql, use month as key, sales as value:
+### Parse JSON columns (`--jsonkeys`)
 
-python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH-1" --key month --value sales
+When a column contains a JSON string from a database JSON function, use `--jsonkeys` to parse it:
 
-Output:
-
-```
-[
-    {
-        "January": 5000
-    },
-    {
-        "sales": 3000
-    }
-]
+```bash
+python -m sql2json --name mysql --query json_report --jsonkeys "payload,metadata"
 ```
 
-### Run query sales_month in database conection mysql, get the unique row and only sales amount:
+Without `--jsonkeys` those columns would be escaped strings; with it they are inlined as JSON.
 
-python3 -m sql2json --name mysql --query total_sales_since --date_from "CURRENT_DATE-10" --first --key sales
+### Inline SQL
 
-Output: 500 or the amount of money you sold since 10 days ago
+No need to define every query in the config file:
 
-### When i use sql2json with result of JSON functions i get escaped strings as value
-
-sql2json as a flag to allow you specify your JSON columns
-
-python3 -m sql2json --name mysql --query json --jsonkeys "json, jsonarray"
-
-Result:
-
-```
-[
-    {
-        "json": {
-            "id":  87,
-            "name", "carrot"
-        }
-        "jsonarray": [1, "abc", null, true],
-    }
-]
+```bash
+python -m sql2json --name mysql --query "SELECT NOW() AS ts" --first --key ts
 ```
 
-This is only a row i want first row only, no array.
+### External `.sql` file
 
-python3 -m sql2json --name mysql --query json --jsonkeys "json, jsonarray" --first
+```bash
+# Defined in config.json as "@/path/to/file.sql"
+python -m sql2json --name mysql --query long_query --min_age 18
 
-Result:
-
-```
-    {
-        "json": {
-            "id":  87,
-            "name", "carrot"
-        }
-        "jsonarray": [1, "abc", null, true],
-    }
+# Or pass the path directly
+python -m sql2json --name mysql --query "@/path/to/my_query.sql" --min_age 18
 ```
 
-### Run query in external sql file:
+## File output
 
-query "operation_parameters"
-Path "Users/myusername/myproject/my-super-query.sql"
+Use `--output` to write to a file instead of stdout. The `--format` flag controls the extension (default `json`):
 
-Content of my-super-query.sql:
+```bash
+# CSV file
+python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --format csv --output Sales
+# → Sales.csv
 
-```
-SELECT p.name, p.age
-FROM persons p
-WHERE p.age > :min_age
-AND p.creation_date > :min_date
-ORDER BY p.age DESC
-LIMIT 10
-```
+# Excel file
+python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --format excel --output Sales
+# → Sales.xls
 
-min_age: 18
-min_date: Today YYYY-MM-DD 00:00:00
-
-python3 -m sql2json --name mysql --query operation_parameters --min_age 18 --min_date CURRENT_DATE|%Y-%m-%d 00:00:00
-
-min_age: 18
-min_date: First day, current year YYYY-01-01 00:00:00
-
-python3 -m sql2json --name mysql --query operation_parameters --min_age 18 --min_date START_CURRENT_YEAR|%Y-%m-%d 00:00:00
-
-### Run external SQL query not defined in config file
-
-python3 -m sql2json --name mysql --query "@/Users/myusername/myproject/my-super-query.sql" --min_age 18 --min_date START_CURRENT_YEAR|%Y-%m-%d 00:00:00
-
-### Run custom query inline
-
-You do't need to have all your queries in config file
-
-python3 -m sql2json --name mysql --query "SELECT NOW() AS date" --first --key date
-
-### Write data to a csv file
-
-python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH-1" --format=csv --output Sales
-
-```
-Output:
-Sales.csv
+# JSON file
+python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --format json --output Sales
+# → Sales.json
 ```
 
-### Write data to an excel file
+**Dated filenames** — use date variables in `--output`:
 
-python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH-1" --format=excel --output Sales
+```bash
+python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH" \
+    --format csv --output "Sales_{START_CURRENT_MONTH}_{CURRENT_DATE}"
+# → Sales_2026-05-01_2026-05-16.csv
 
-```
-Output:
-Sales.xls
-```
-
-### Write data to a json file
-
-python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH-1" --format=json --output Sales
-
-Output:
-```
-Sales.json
+python -m sql2json --name mysql --query sales_monthly --date_from "CURRENT_DATE" \
+    --format csv --output "reports/Sales_{CURRENT_DATE}"
+# → reports/Sales_2026-05-16.csv
 ```
 
-### Write data to a file with custom filename using formula
+> **Note:** `--output` does not create directories. Create the target folder first.
 
-python3 -m sql2json --name mysql --query sales_month_since --date_from "START_CURRENT_MONTH" --format=csv --output Sales_{START_CURRENT_MONTH}_{CURRENT_DATE}
+> **Note:** CSV requires `--output` (it cannot be written to stdout).
 
-Output:
-```
-If Current Date is "2020-05-24"
+## For AI agents
 
-Sales_2020-05-01_2020-05-24.csv
-```
+`sql2json` is designed to be called as a subprocess by AI agents and LLMs. It outputs clean JSON to stdout, structured errors to stderr, and supports discovery commands so an agent can orient itself before querying.
 
-
-python3 -m sql2json --name mysql --query sales_month_since --date_from "CURRENT_DATE" --format=csv --output sales/Sales_{CURRENT_DATE}
-
-Output:
-```
-If Current Date is "2020-05-24"
-
-File Sales_2020-05-24.csv inside folder sales. sales/Sales_2020-05-24.csv
-```
-
-**IMPORTANT**: The sales folder is not created. You need to create it in your own.
+See [AGENTS.md](AGENTS.md) for the full agent integration guide, including discovery flags, error handling, the Python API, and security notes.

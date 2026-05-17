@@ -77,11 +77,16 @@ def get_for_key_or_first_map_value(my_dict: dict, key: Optional[str] = None):
     return ""
 
 
+def _get_connections_dict(config: dict) -> dict:
+    """Return the connections dict, accepting both 'connections' and 'conections'."""
+    return config.get("connections") or config.get("conections", {})
+
+
 def list_connections(config_path: Optional[str] = None) -> list:
     """Return the names of all configured database connections."""
     path = config_path or _find_config()
     config = load_config_file(path)
-    return list(config.get("conections", {}).keys())
+    return list(_get_connections_dict(config).keys())
 
 
 def list_queries(config_path: Optional[str] = None) -> list:
@@ -103,7 +108,7 @@ def run_query_by_name(
 
     config = load_config_file(config_path)
 
-    config_dbs = config.get("conections", {})
+    config_dbs = _get_connections_dict(config)
     config_queries = config.get("queries", {})
 
     # If conection_name does not exist, try to use as connection string

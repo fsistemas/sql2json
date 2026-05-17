@@ -72,7 +72,7 @@ Agents should use **JSON** (default) or **CSV** (`--format csv --output file`).
 
 - JSON is returned on stdout and can be piped directly.
 - CSV requires `--output` to write to a file.
-- Excel (`--format excel`) is available for human consumption only.
+- Excel (`--format excel`) is best for human consumption; agents should prefer JSON or CSV.
 
 ---
 
