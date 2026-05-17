@@ -67,3 +67,48 @@ Query values prefixed with `@` are treated as file paths to `.sql` files.
 | `--jsonkeys` | Comma-separated column names whose string values should be parsed as JSON |
 | `--format` | `json` (default), `csv`, or `excel` |
 | `--output` | Save to file instead of printing; filename supports `{CURRENT_DATE}` etc. |
+
+## Release process
+
+### Checklist
+
+1. **Bump version** in `pyproject.toml`:
+   ```toml
+   version = "0.1.12"
+   ```
+
+2. **Update `CHANGELOG.md`** — add a new `[0.1.12]` section at the top following Keep a Changelog format.
+
+3. **Run tests and lint**:
+   ```bash
+   uv run pytest
+   uv run flake8
+   ```
+
+4. **Commit**:
+   ```bash
+   git add pyproject.toml CHANGELOG.md
+   git commit -m "chore: bump version to 0.1.12"
+   ```
+
+5. **Tag** (always prefix with `v`):
+   ```bash
+   git tag v0.1.12
+   ```
+
+6. **Push commit and tag together**:
+   ```bash
+   git push origin master --tags
+   ```
+
+7. **Build and publish to PyPI**:
+   ```bash
+   uv build
+   uv publish
+   ```
+   `uv build` produces `dist/sql2json-0.1.12.tar.gz` and the wheel. `uv publish` uploads to PyPI (requires a token configured via `UV_PUBLISH_TOKEN` or `~/.pypirc`).
+
+### Notes
+
+- Build artifacts (`dist/`, `*.egg-info/`) are in `.gitignore` — never commit them.
+- The build backend is **hatchling** (set in `pyproject.toml`). Do not use `python setup.py` or `setuptools` commands.
