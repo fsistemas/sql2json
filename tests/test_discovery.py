@@ -1,8 +1,5 @@
 import json
 import os
-import tempfile
-
-import pytest
 
 from sql2json import list_connections, list_queries
 from sql2json.sql2json import _find_config, run_query_by_name

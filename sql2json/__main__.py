@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import csv
-import datetime
 import json
 import sys
 
@@ -9,6 +8,7 @@ import fire
 
 from .parameter import parse_parameter
 from .sql2json import (
+    _current_date,
     list_connections as _list_connections,
     list_queries as _list_queries,
     run_query2json,
@@ -28,8 +28,8 @@ def parse_filename(file_name, current_date):
     return "".join(results)
 
 
-def save_json(rows, file_name):
-    current_date = datetime.date.today()
+def save_json(rows, file_name, timezone=None):
+    current_date = _current_date(timezone)
     parsed_filename = parse_filename(file_name, current_date)
 
     final_file_name = (
@@ -40,8 +40,8 @@ def save_json(rows, file_name):
         json.dump(rows, outfile)
 
 
-def save_csv(rows, file_name, dialect, key):
-    current_date = datetime.date.today()
+def save_csv(rows, file_name, dialect, key, timezone=None):
+    current_date = _current_date(timezone)
     parsed_filename = parse_filename(file_name, current_date)
 
     ext = ".xls" if dialect == "excel" else ".csv"
@@ -94,6 +94,7 @@ def handle_run_query2json(
     output=None,
     list_connections=False,
     list_queries=False,
+    timezone=None,
     **kwargs
 ):
     try:
@@ -107,15 +108,15 @@ def handle_run_query2json(
             print(json.dumps(_list_queries(config_path)))
             return
 
-        result = run_query2json(name, query, wrapper, first, key, value, jsonkeys, **kwargs)
+        result = run_query2json(name, query, wrapper, first, key, value, jsonkeys, timezone=timezone, **kwargs)
 
         if output:
             if "csv" == format:
-                save_csv(result, output, "csv", key)
+                save_csv(result, output, "csv", key, timezone=timezone)
             if "excel" == format:
-                save_csv(result, output, "excel", key)
+                save_csv(result, output, "excel", key, timezone=timezone)
             else:
-                save_json(result, output)
+                save_json(result, output, timezone=timezone)
         else:
             if key and value and first:
                 print(json.dumps(result))

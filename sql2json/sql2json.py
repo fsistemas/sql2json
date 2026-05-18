@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
@@ -9,13 +10,19 @@ from sqlalchemy.sql import text
 from .parameter import parse_parameter
 
 
+def _current_date(timezone: Optional[str] = None) -> datetime.date:
+    if timezone:
+        return datetime.datetime.now(ZoneInfo(timezone)).date()
+    return datetime.date.today()
+
+
 def map_result_proxy2list_dict(result_proxy) -> list:
     keys = list(result_proxy.keys())
     return [dict(zip(keys, row)) for row in result_proxy]
 
 
-def run_query(engine, raw_query: str, **kwargs) -> list:
-    current_date = datetime.date.today()
+def run_query(engine, raw_query: str, timezone: Optional[str] = None, **kwargs) -> list:
+    current_date = _current_date(timezone)
     parameters = {k: parse_parameter(v, current_date) for k, v in kwargs.items()}
 
     with engine.connect() as con:
@@ -103,8 +110,9 @@ def run_query_by_name(
     Run a SQL query given a conection_name, query_name.
     Returns a list of dicts.
     """
-    # Pop config before passing kwargs to SQLAlchemy so it isn't treated as a bind param
+    # Pop config and timezone before passing kwargs to SQLAlchemy so they aren't treated as bind params
     config_path = kwargs.pop("config", None) or _find_config()
+    timezone = kwargs.pop("timezone", None)
 
     config = load_config_file(config_path)
 
@@ -122,7 +130,7 @@ def run_query_by_name(
 
     engine = create_engine(conection_string)
 
-    return run_query(engine, raw_query_string, **kwargs)
+    return run_query(engine, raw_query_string, timezone=timezone, **kwargs)
 
 
 def parse_json_columns(result: dict, jsonkeys: str = "") -> dict:
@@ -159,6 +167,7 @@ def run_query2json(
     key: str = "",
     value: str = "",
     jsonkeys: str = "",
+    timezone: Optional[str] = None,
     **kwargs,
 ):
     """
@@ -171,8 +180,9 @@ def run_query2json(
     key: Column name to use as key (with value) or extract as scalar (with first).
     value: Column name to use as value (used with key).
     jsonkeys: Comma-separated columns whose string values should be parsed as JSON.
+    timezone: IANA timezone name used to resolve CURRENT_DATE and related variables (e.g. "America/New_York"). Defaults to local system timezone.
     """
-    unparsed_results = run_query_by_name(name, query, **kwargs)
+    unparsed_results = run_query_by_name(name, query, timezone=timezone, **kwargs)
 
     results = [parse_json_columns(result, jsonkeys) for result in unparsed_results]
 

@@ -1,4 +1,9 @@
+import datetime
+
+import pytest
+
 from sql2json import __version__, run_query_by_name
+from sql2json.sql2json import _current_date
 
 
 def test_version():
@@ -43,6 +48,21 @@ def test_run_query_raw_sql():
 
     assert 11 == json_result["a"]
     assert 22 == json_result["b"]
+
+
+class TestCurrentDate:
+    def test_no_timezone_returns_date(self):
+        assert isinstance(_current_date(), datetime.date)
+
+    def test_utc_returns_date(self):
+        assert isinstance(_current_date("UTC"), datetime.date)
+
+    def test_named_timezone_returns_date(self):
+        assert isinstance(_current_date("America/New_York"), datetime.date)
+
+    def test_invalid_timezone_raises(self):
+        with pytest.raises(Exception):
+            _current_date("Invalid/Zone")
 
 
 def test_run_query_raw_sql_parameters():

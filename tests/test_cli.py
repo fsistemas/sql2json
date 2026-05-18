@@ -8,7 +8,6 @@ import json
 import os
 import subprocess
 import sys
-import tempfile
 
 import pytest
 
@@ -153,3 +152,37 @@ class TestErrorOutput:
         _write_config(cfg, CONFIG)
         with pytest.raises(Exception):
             run_query2json("default", "SELECT * FROM nonexistent_table", config=cfg)
+
+
+class TestTimezone:
+    def test_utc_exits_zero(self, tmp_path):
+        cfg = str(tmp_path / "config.json")
+        _write_config(cfg, CONFIG)
+        result = run_cli("--timezone", "UTC", "--config", cfg)
+        assert result.returncode == 0
+
+    def test_named_timezone_exits_zero(self, tmp_path):
+        cfg = str(tmp_path / "config.json")
+        _write_config(cfg, CONFIG)
+        result = run_cli("--timezone", "America/New_York", "--config", cfg)
+        assert result.returncode == 0
+
+    def test_timezone_result_is_valid_json(self, tmp_path):
+        cfg = str(tmp_path / "config.json")
+        _write_config(cfg, CONFIG)
+        result = run_cli("--timezone", "UTC", "--config", cfg)
+        rows = json.loads(result.stdout)
+        assert rows[0]["a"] == 1
+
+    def test_invalid_timezone_exits_nonzero(self, tmp_path):
+        cfg = str(tmp_path / "config.json")
+        _write_config(cfg, CONFIG)
+        result = run_cli("--timezone", "Invalid/Zone", "--config", cfg)
+        assert result.returncode != 0
+
+    def test_invalid_timezone_stderr_is_json(self, tmp_path):
+        cfg = str(tmp_path / "config.json")
+        _write_config(cfg, CONFIG)
+        result = run_cli("--timezone", "Invalid/Zone", "--config", cfg)
+        error = json.loads(result.stderr)
+        assert "error" in error

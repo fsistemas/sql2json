@@ -48,6 +48,8 @@ CLI parameter values that match built-in variables are resolved before being pas
 - Arithmetic: `CURRENT_DATE-10`, `START_CURRENT_MONTH+1` (days for DATE, months for MONTH vars, years for YEAR vars)
 - Custom format via `|` separator: `CURRENT_DATE|%Y-%m-%d 00:00:00`
 
+"Today" is resolved in the local system timezone by default. Pass `--timezone <IANA name>` (e.g. `--timezone UTC`, `--timezone America/New_York`) to pin resolution to a specific timezone. This matters when the tool runs in a different timezone than the intended date boundary.
+
 ### Config file
 
 Default path: `~/.sql2json/config.json`. If missing, falls back to an in-memory SQLite DB with `SELECT 1 AS a, 2 AS b` (this is how tests run — no external DB needed).
@@ -67,6 +69,7 @@ Query values prefixed with `@` are treated as file paths to `.sql` files.
 | `--jsonkeys` | Comma-separated column names whose string values should be parsed as JSON |
 | `--format` | `json` (default), `csv`, or `excel` |
 | `--output` | Save to file instead of printing; filename supports `{CURRENT_DATE}` etc. |
+| `--timezone` | IANA timezone name for resolving date variables (e.g. `UTC`, `America/New_York`). Defaults to local system timezone. |
 
 ## Release process
 
