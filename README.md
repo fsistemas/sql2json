@@ -23,6 +23,103 @@ python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT
 pip install sql2json
 ```
 
+## Docker
+
+The image includes drivers for PostgreSQL (`psycopg2-binary`) and MySQL / MariaDB (`PyMySQL`) in addition to SQLite, which is built into Python.
+
+Build the image from the repository root:
+
+```bash
+docker build -t sql2json .
+```
+
+Quick test without a config file:
+
+```bash
+docker run --rm sql2json --query "SELECT 1 AS a, 2 AS b"
+# → [{"a": 1, "b": 2}]
+```
+
+Run with your own config by mounting `~/.sql2json`:
+
+```bash
+docker run --rm \
+  -v ~/.sql2json:/root/.sql2json \
+  sql2json --name default --query sales_monthly --date_from "START_CURRENT_MONTH-1"
+```
+
+For SQLite, mount both the config directory and the database file. Point the connection string in your config to the in-container path:
+
+```bash
+docker run --rm \
+  -v ~/.sql2json:/root/.sql2json \
+  -v /path/to/mydb.sqlite:/data/mydb.sqlite \
+  sql2json --name default --query default
+```
+
+```json
+{
+    "connections": {
+        "default": "sqlite:////data/mydb.sqlite"
+    }
+}
+```
+
+Write output files by mounting a host directory to `/workspace`, the container working directory:
+
+```bash
+docker run --rm \
+  -v ~/.sql2json:/root/.sql2json \
+  -v $(pwd)/reports:/workspace \
+  sql2json --name default --query sales_monthly \
+    --format csv --output "Sales_{CURRENT_DATE}"
+# → ./reports/Sales_2026-05-17.csv on the host
+```
+
+MS SQL Server needs system-level ODBC libraries, so install the driver in a derived image:
+
+```dockerfile
+FROM sql2json
+RUN pip install --no-cache-dir pyodbc
+```
+
+### Try it with docker compose
+
+The repo includes a `docker-compose.yml` that starts PostgreSQL and MySQL with demo-only credentials, a small `sales` table, and a pre-wired `docker/config.json`. The database ports bind to `127.0.0.1` for local testing.
+
+Start the databases:
+
+```bash
+docker compose up -d postgres mysql
+```
+
+Run queries against PostgreSQL:
+
+```bash
+docker compose run --rm sql2json --name pg --query version
+# → [{"version": "PostgreSQL 16.x ..."}]
+
+docker compose run --rm sql2json --name pg --query sales
+# → [{"id": 1, "month": "January", "amount": 5000.0}, ...]
+
+docker compose run --rm sql2json --name pg --query sales_by_month --min_amount 4000
+# → [{"month": "January", "amount": 5000.0}, {"month": "March", "amount": 7100.75}]
+```
+
+Run the same demo queries against MySQL by switching `--name`:
+
+```bash
+docker compose run --rm sql2json --name mysql --query sales
+```
+
+Tear down when done:
+
+```bash
+docker compose down
+```
+
+The demo config lives in `docker/config.json` and the seed table in `docker/initdb.sql`.
+
 ## Quick start
 
 **1. Create the config file:**

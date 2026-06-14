@@ -1,0 +1,11 @@
+{
+    "connections": {
+        "pg": "postgresql+psycopg2://demo:demo@postgres/demo",
+        "mysql": "mysql+pymysql://demo:demo@mysql/demo"
+    },
+    "queries": {
+        "version": "SELECT version() AS version",
+        "sales": "SELECT * FROM sales",
+        "sales_by_month": "SELECT month, amount FROM sales WHERE amount >= :min_amount"
+    }
+}

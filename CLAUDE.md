@@ -22,6 +22,9 @@ uv run black .
 
 # Run the CLI tool
 python -m sql2json --name default --query default
+
+# Build Docker image
+docker build -t sql2json .
 ```
 
 ## Architecture

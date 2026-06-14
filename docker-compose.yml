@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: demo
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ./docker/initdb.sql:/docker-entrypoint-initdb.d/01-demo.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mysql:
+    image: docker.io/library/mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: demo
+      MYSQL_USER: demo
+      MYSQL_PASSWORD: demo
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - ./docker/initdb.sql:/docker-entrypoint-initdb.d/01-demo.sql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  sql2json:
+    build: .
+    volumes:
+      - ./docker/config.json:/root/.sql2json/config.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
