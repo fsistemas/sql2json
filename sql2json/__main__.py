@@ -3,6 +3,7 @@ from __future__ import print_function
 import csv
 import json
 import sys
+from decimal import Decimal
 
 import fire
 
@@ -28,6 +29,16 @@ def parse_filename(file_name, current_date):
     return "".join(results)
 
 
+def json_default(value):
+    if isinstance(value, Decimal):
+        return float(value)
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
+
+def json_dumps(value):
+    return json.dumps(value, default=json_default)
+
+
 def save_json(rows, file_name, timezone=None):
     current_date = _current_date(timezone)
     parsed_filename = parse_filename(file_name, current_date)
@@ -37,7 +48,7 @@ def save_json(rows, file_name, timezone=None):
     )
 
     with open(final_file_name, "w") as outfile:
-        json.dump(rows, outfile)
+        outfile.write(json_dumps(rows))
 
 
 def save_csv(rows, file_name, dialect, key, timezone=None):
@@ -119,11 +130,11 @@ def handle_run_query2json(
                 save_json(result, output, timezone=timezone)
         else:
             if key and value and first:
-                print(json.dumps(result))
+                print(json_dumps(result))
             elif key and first:
                 print(result)
             else:
-                print(json.dumps(result))
+                print(json_dumps(result))
 
     except Exception as e:
         print(json.dumps({"error": str(e), "type": type(e).__name__}), file=sys.stderr)

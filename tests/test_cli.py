@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import sys
+from decimal import Decimal
 
 import pytest
 
@@ -59,6 +60,13 @@ class TestDefaultQuery:
         assert result.returncode == 0
         rows = json.loads(result.stdout)
         assert rows[0]["val"] == 99
+
+    def test_decimal_results_are_json_serializable(self):
+        from sql2json.__main__ import json_dumps
+
+        rows = [{"amount": Decimal("5000.00")}]
+
+        assert json_dumps(rows) == '[{"amount": 5000.0}]'
 
 
 class TestListConnections:
