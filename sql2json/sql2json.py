@@ -40,7 +40,7 @@ def load_config_file(config_path: str) -> dict:
         pass
 
     return {
-        "conections": {"default": "sqlite:///test.db"},
+        "conections": {"default": "sqlite:///:memory:"},
         "queries": {"default": "SELECT 1 AS a, 2 AS b"},
     }
 
