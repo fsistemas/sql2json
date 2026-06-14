@@ -3,3 +3,4 @@ dist
 test.db
 .pytest_cache
 *.egg-info/
+.claude/
