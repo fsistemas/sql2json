@@ -151,6 +151,23 @@ Each test **skips cleanly** when its database is unreachable, so a machine
 without Docker never sees failures. In CI, the `integration` job in
 `.github/workflows/ci.yml` provisions the services and runs the same suite.
 
+### Quality gates
+
+The same checks that CI enforces can be run locally. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+```bash
+uv run --extra dev black --check .   # formatting
+uv run --extra dev flake8            # linting
+uv run --extra dev mypy              # type checking
+uv run --extra dev pytest --cov      # tests + coverage (gated at 90%)
+```
+
+`uv run --extra dev black .` reformats in place. CI (`.github/workflows/ci.yml`)
+runs these on every pull request and on pushes to `master`: a `quality` job for
+black/flake8/mypy, a `unit` job across Python 3.10–3.13 with the coverage gate,
+and the database `integration` job.
+
 ## Quick start
 
 **1. Create the config file:**

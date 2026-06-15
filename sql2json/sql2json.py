@@ -1,7 +1,7 @@
 import datetime
 import json
 import os
-from typing import Optional
+from typing import Optional, Union
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import create_engine
@@ -169,7 +169,7 @@ def run_query2json(
     jsonkeys: str = "",
     timezone: Optional[str] = None,
     **kwargs,
-):
+) -> Union[str, dict, list]:
     """
     Run a SQL query and return results with optional transformations.
 
@@ -186,7 +186,7 @@ def run_query2json(
 
     results = [parse_json_columns(result, jsonkeys) for result in unparsed_results]
 
-    result = None
+    result: Union[str, dict, list, None] = None
 
     if first:
         if results and len(results) > 0:
@@ -201,9 +201,11 @@ def run_query2json(
     else:
         if key and value:
             result = [
-                {item.get(key): item.get(value)}
-                if key and key in item and value in item
-                else item
+                (
+                    {item.get(key): item.get(value)}
+                    if key and key in item and value in item
+                    else item
+                )
                 for item in results
             ]
         else:

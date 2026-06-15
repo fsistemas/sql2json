@@ -24,6 +24,12 @@ uv run flake8
 # Format
 uv run black .
 
+# Type check
+uv run --extra dev mypy
+
+# Tests with coverage (gated at 90% via fail_under in pyproject.toml)
+uv run --extra dev pytest --cov
+
 # Run the CLI tool
 python -m sql2json --name default --query default
 

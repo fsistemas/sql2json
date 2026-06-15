@@ -106,7 +106,7 @@ def handle_run_query2json(
     list_connections=False,
     list_queries=False,
     timezone=None,
-    **kwargs
+    **kwargs,
 ):
     try:
         if list_connections:
@@ -119,7 +119,17 @@ def handle_run_query2json(
             print(json.dumps(_list_queries(config_path)))
             return
 
-        result = run_query2json(name, query, wrapper, first, key, value, jsonkeys, timezone=timezone, **kwargs)
+        result = run_query2json(
+            name,
+            query,
+            wrapper,
+            first,
+            key,
+            value,
+            jsonkeys,
+            timezone=timezone,
+            **kwargs,
+        )
 
         if output:
             if "csv" == format:
