@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  unit:
+    name: Unit tests (fast, no Docker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: uv sync
+      - name: Lint
+        run: uv run flake8
+      - name: Run unit tests
+        run: uv run pytest
+
+  integration:
+    name: Database integration (PostgreSQL + MySQL)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      # Provisions the docker-compose postgres/mysql services (seeded from
+      # docker/initdb.sql), runs the integration suite against them, and tears
+      # them down. Demo credentials are local/demo-only and safe in a public repo.
+      - name: Run database integration tests
+        run: ./scripts/test-integration.sh

@@ -120,6 +120,37 @@ docker compose down
 
 The demo config lives in `docker/config.json` and the seed table in `docker/initdb.sql`.
 
+### Real database verification
+
+The fast unit suite runs against in-memory SQLite and needs no Docker:
+
+```bash
+uv run pytest
+```
+
+A separate, opt-in integration suite verifies the documented demo paths (named
+connection lookup, named query lookup, bind parameters, Decimal values, and JSON
+serialization) against the real PostgreSQL and MySQL services. The one command
+below provisions the `docker-compose.yml` services, runs the suite, and tears
+them down:
+
+```bash
+./scripts/test-integration.sh
+```
+
+The integration tests are marked `integration` and deselected by default, so
+`uv run pytest` stays Docker-free. To run them against already-running services
+(or a different host/port via `SQL2JSON_TEST_PG_URL` / `SQL2JSON_TEST_MYSQL_URL`):
+
+```bash
+docker compose up -d postgres mysql
+uv run --extra integration pytest -m integration tests/integration
+```
+
+Each test **skips cleanly** when its database is unreachable, so a machine
+without Docker never sees failures. In CI, the `integration` job in
+`.github/workflows/ci.yml` provisions the services and runs the same suite.
+
 ## Quick start
 
 **1. Create the config file:**
