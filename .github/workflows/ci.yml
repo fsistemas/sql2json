@@ -12,12 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - name: Install dependencies
-        run: uv sync
       - name: Lint
-        run: uv run flake8
+        run: uv run --extra dev flake8
       - name: Run unit tests
-        run: uv run pytest
+        run: uv run --extra dev pytest
 
   integration:
     name: Database integration (PostgreSQL + MySQL)
