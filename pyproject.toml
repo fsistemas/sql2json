@@ -18,7 +18,18 @@ dev = [
     "black>=19.10b0",
     "pre-commit>=1.10",
 ]
+integration = [
+    "psycopg2-binary>=2.9",
+    "pymysql>=1.1",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: real-database tests requiring docker-compose services (deselected by default; run with -m integration)",
+]
+addopts = "-m 'not integration'"

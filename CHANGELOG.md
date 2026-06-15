@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > date-variable resolution.
 
 ### Added
+- Real-database integration test suite (`tests/integration/`) covering the PostgreSQL and MySQL demo paths: named connection lookup, named query lookup, bind parameters, Decimal values, and JSON serialization. Tests are marked `integration` and deselected by default, so `uv run pytest` stays fast and Docker-free. Run them with `./scripts/test-integration.sh` (provisions the `docker-compose.yml` services, runs the suite, tears down) or `uv run --extra integration pytest -m integration tests/integration` against already-running services. Each test skips cleanly when its database is unreachable. A `.github/workflows/ci.yml` `integration` job provisions the services in CI.
 - Explicit `__all__` exports for the supported top-level Python API and `sql2json.parameter` surface.
 - Python API documentation and runnable examples under `examples/python_api`.
 - `--timezone` flag: accepts an IANA timezone name (e.g. `--timezone America/New_York`, `--timezone UTC`) and uses it when resolving `CURRENT_DATE`, `START_CURRENT_MONTH`, and all other date variables. Defaults to local system timezone (backward-compatible). An invalid timezone name produces a structured JSON error on stderr and a non-zero exit code.

@@ -8,11 +8,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install dependencies
 uv sync
 
-# Run all tests
+# Run all tests (fast, in-memory SQLite — no Docker)
 uv run pytest
 
 # Run a single test
 uv run pytest tests/test_parameter.py::test_parse_parameter
+
+# Run the real-database integration suite (PostgreSQL + MySQL via docker compose)
+# Provisions services, runs the `integration`-marked tests, then tears down.
+./scripts/test-integration.sh
 
 # Lint
 uv run flake8
@@ -73,6 +77,11 @@ Query values prefixed with `@` are treated as file paths to `.sql` files.
 | `--format` | `json` (default), `csv`, or `excel` |
 | `--output` | Save to file instead of printing; filename supports `{CURRENT_DATE}` etc. |
 | `--timezone` | IANA timezone name for resolving date variables (e.g. `UTC`, `America/New_York`). Defaults to local system timezone. |
+
+### Tests
+
+- **Unit tests** (`uv run pytest`) use the in-memory SQLite fallback — fast, no Docker, no external DB.
+- **Integration tests** (`tests/integration/`, marked `integration`, deselected by default via `addopts` in `pyproject.toml`) run against the real PostgreSQL and MySQL `docker-compose.yml` services. The `database` fixture in `tests/integration/conftest.py` builds a temp config that maps a connection name to a `127.0.0.1` URL (overridable with `SQL2JSON_TEST_PG_URL` / `SQL2JSON_TEST_MYSQL_URL`) and reuses the named queries from `docker/config.json`. Tests `pytest.skip` cleanly when a database is unreachable or its driver (`psycopg2-binary` / `pymysql`, the `integration` extra) is missing. Run with `./scripts/test-integration.sh`.
 
 ## Release process
 
