@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > date-variable resolution.
 
 ### Added
+- CI quality gates in `.github/workflows/ci.yml`: a `quality` job running `black --check`, `flake8`, and `mypy`; a `unit` job running the test suite with coverage across Python 3.10–3.13; and the existing database `integration` job. Coverage is gated at 90% via `fail_under` in `pyproject.toml`. CI runs on pull requests and pushes to `master`.
+- `CONTRIBUTING.md` documenting the local quality-gate commands and supported Python matrix; the README gains a "Quality gates" section.
+- `[tool.black]`, `[tool.mypy]`, and `[tool.coverage]` configuration in `pyproject.toml`. `black` target is pinned to `py310`; `mypy` carries a narrow, documented `ignore_missing_imports` override for the stub-less `fire` import.
 - Real-database integration test suite (`tests/integration/`) covering the PostgreSQL and MySQL demo paths: named connection lookup, named query lookup, bind parameters, Decimal values, and JSON serialization. Tests are marked `integration` and deselected by default, so `uv run pytest` stays fast and Docker-free. Run them with `./scripts/test-integration.sh` (provisions the `docker-compose.yml` services, runs the suite, tears down) or `uv run --extra integration pytest -m integration tests/integration` against already-running services. Each test skips cleanly when its database is unreachable. A `.github/workflows/ci.yml` `integration` job provisions the services in CI.
 - Explicit `__all__` exports for the supported top-level Python API and `sql2json.parameter` surface.
 - Python API documentation and runnable examples under `examples/python_api`.
@@ -31,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Package version is now single-sourced from installed package metadata via `importlib.metadata.version("sql2json")`.
 - `sql2json.parameter` now only exports the public `parse_parameter` entry point; lower-level date helper functions are private implementation details.
+- `run_query2json` now carries an explicit `-> Union[str, dict, list]` return annotation so the package type-checks cleanly under mypy.
 
 ## [0.1.11] - 2026-05-16
 
