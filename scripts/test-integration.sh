@@ -54,4 +54,5 @@ if ! docker compose up -d --wait "${services[@]}" 2>/dev/null; then
 fi
 
 echo ">> Running integration tests..."
-uv run --extra integration pytest -m integration tests/integration "$@"
+# `dev` provides pytest; `integration` provides the psycopg2 / pymysql drivers.
+uv run --extra dev --extra integration pytest -m integration tests/integration "$@"
