@@ -124,7 +124,7 @@ def handle_run_query2json(
         if output:
             if "csv" == format:
                 save_csv(result, output, "csv", key, timezone=timezone)
-            if "excel" == format:
+            elif "excel" == format:
                 save_csv(result, output, "excel", key, timezone=timezone)
             else:
                 save_json(result, output, timezone=timezone)

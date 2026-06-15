@@ -176,10 +176,6 @@ class TestCliOutput:
         rows = list(csv.DictReader(written.open()))
         assert rows == [{"a": "1", "b": "2"}]
 
-    @pytest.mark.xfail(
-        reason="FRA-172: --format csv also writes a stray .json file",
-        strict=True,
-    )
     def test_csv_output_does_not_create_json(self, tmp_path):
         target = tmp_path / "result"
         run_cli(
@@ -192,8 +188,7 @@ class TestCliOutput:
             "--output",
             str(target),
         )
-        # Desired behavior: csv output should not also produce a .json file.
-        # Currently fails (xfail) until FRA-172 is fixed; will xpass after.
+        # Regression guard for FRA-172: csv output must not also produce a .json.
         assert not (tmp_path / "result.json").exists()
 
     def test_excel_output_creates_xls_file(self, tmp_path):
