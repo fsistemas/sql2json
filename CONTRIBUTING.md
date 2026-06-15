@@ -1,9 +1,17 @@
 # Contributing to sql2json
 
-Thanks for contributing! This project runs a set of automated quality gates on
-every pull request and on pushes to `master` (see
+Thanks for contributing! External contributors are welcome to open issues and
+pull requests. This project runs a set of automated quality gates on every pull
+request and on pushes to `master` (see
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)). Running them locally
 before you push keeps the feedback loop fast.
+
+> **Releases are maintainer-only.** Anyone may propose changes, but bumping the
+> version, tagging, and publishing to PyPI are reserved for the project
+> maintainer (see [RELEASING.md](RELEASING.md)). Please do not bump the version
+> in a PR — if you think a release is warranted, open an issue requesting one.
+> Found a security issue? See [SECURITY.md](SECURITY.md) — do not open a public
+> issue for it.
 
 ## Setup
 

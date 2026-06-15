@@ -23,6 +23,19 @@ python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT
 pip install sql2json
 ```
 
+SQLite works out of the box (it ships with Python). For PostgreSQL or MySQL,
+install the matching driver extra:
+
+```bash
+pip install "sql2json[postgres]"   # psycopg2-binary
+pip install "sql2json[mysql]"      # PyMySQL
+pip install "sql2json[postgres,mysql]"
+```
+
+Other databases work too — install any
+[SQLAlchemy-supported driver](https://docs.sqlalchemy.org/en/20/dialects/) (e.g.
+`pyodbc` for MS SQL Server) alongside `sql2json`.
+
 ## Docker
 
 The image includes drivers for PostgreSQL (`psycopg2-binary`) and MySQL / MariaDB (`PyMySQL`) in addition to SQLite, which is built into Python.
@@ -467,3 +480,19 @@ See [examples/python_api](examples/python_api) for runnable examples covering na
 `sql2json` is designed to be called as a subprocess by AI agents and LLMs. It outputs clean JSON to stdout, structured errors to stderr, and supports discovery commands so an agent can orient itself before querying.
 
 See [AGENTS.md](AGENTS.md) for the full agent integration guide, including discovery flags, error handling, the Python API, and security notes.
+
+## Contributing
+
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for
+local setup and the quality gates. Releases are maintainer-only
+([RELEASING.md](RELEASING.md)).
+
+## Security
+
+`sql2json` executes the SQL it is given and config files may contain database
+credentials. See [SECURITY.md](SECURITY.md) for the security model and how to
+report a vulnerability privately.
+
+## License
+
+[MIT](LICENSE) © Francisco Perez
