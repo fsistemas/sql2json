@@ -6,13 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> **Next release target: `0.2.0` (minor bump, breaking under SemVer).**
-> The next release tightens the public Python API: the `sql2json.parameter`
+## [0.2.0] - 2026-06-15
+
+> **`0.2.0` is a minor bump that ships breaking changes under the pre-1.0 SemVer
+> convention.** The public Python API is tightened: the `sql2json.parameter`
 > date helpers (`is_number`, `first_day_month`, `first_day_year`,
-> `last_day_month`, `last_day_year`, `parse_field`, `parse_formula`) become
-> private and are no longer re-exported. `parse_parameter` remains the
-> supported public entry point. `sql2json` is pre-1.0, so this ships as a
-> minor bump with **no formal deprecation cycle**.
+> `last_day_month`, `last_day_year`, `parse_field`, `parse_formula`) are now
+> private and no longer re-exported. `parse_parameter` remains the supported
+> public entry point. `sql2json` is pre-1.0, so this ships as a minor bump with
+> **no formal deprecation cycle**.
 >
 > This release includes API-boundary work: privatizing helpers, adding
 > explicit `__all__` exports, and single-sourcing the package version via
