@@ -10,8 +10,8 @@ jobs:
     name: Format, lint & type checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
       - name: Format check (black)
         run: uv run --extra dev black --check .
       - name: Lint (flake8)
@@ -27,8 +27,8 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
       # Coverage is gated by `fail_under` in pyproject.toml; this step fails
       # the build if total coverage drops below the configured floor.
       - name: Run unit tests with coverage
@@ -40,8 +40,8 @@ jobs:
     name: Database integration (PostgreSQL + MySQL)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
       # Provisions the docker-compose postgres/mysql services (seeded from
       # docker/initdb.sql), runs the integration suite against them, and tears
       # them down. Demo credentials are local/demo-only and safe in a public repo.
