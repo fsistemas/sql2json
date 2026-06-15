@@ -2,15 +2,41 @@
 name = "sql2json"
 version = "0.2.0"
 description = "Tool to run a SQL query and convert result to JSON"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Francisco Perez", email = "fsistemas@gmail.com" }
+]
+keywords = ["sql", "json", "csv", "sqlalchemy", "cli", "etl", "database"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Database",
+    "Topic :: Utilities",
 ]
 dependencies = [
     "SQLAlchemy>=1.3.12", "fire>=0.2.1", "python-dateutil>=2.8.1",
 ]
 requires-python = ">=3.10"
 
+[project.urls]
+Homepage = "https://github.com/fsistemas/sql2json"
+Repository = "https://github.com/fsistemas/sql2json"
+Issues = "https://github.com/fsistemas/sql2json/issues"
+Changelog = "https://github.com/fsistemas/sql2json/blob/master/CHANGELOG.md"
+
 [project.optional-dependencies]
+# User-facing database driver extras: pip install "sql2json[postgres]" etc.
+postgres = ["psycopg2-binary>=2.9"]
+mysql = ["pymysql>=1.1"]
 dev = [
     "flake8>=3.7.9",
     "mypy>=0.761",
@@ -20,6 +46,7 @@ dev = [
     "pre-commit>=1.10",
     "types-python-dateutil>=2.8",
 ]
+# Drivers needed for the real-database integration suite (PostgreSQL + MySQL).
 integration = [
     "psycopg2-binary>=2.9",
     "pymysql>=1.1",
