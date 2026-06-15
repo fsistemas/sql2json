@@ -369,6 +369,51 @@ python -m sql2json --name mysql --query sales_monthly --date_from "CURRENT_DATE"
 
 > **Note:** CSV requires `--output` (it cannot be written to stdout).
 
+## Python API
+
+The supported Python API mirrors the user-facing CLI capabilities while keeping implementation details private:
+
+```python
+from sql2json import list_connections, list_queries, run_query2json, run_query_by_name
+
+rows = run_query2json(
+    name="sqlite:///:memory:",
+    query="SELECT :person_name AS name, :score AS score",
+    person_name="Ada",
+    score=42,
+)
+
+connections = list_connections("/path/to/config.json")
+queries = list_queries("/path/to/config.json")
+```
+
+Use `run_query2json()` for inline SQL, named queries, SQL files with `@/path.sql`, bind/date parameters, `first`, `key`, `value`, `wrapper`, `jsonkeys`, and `timezone`. Use `run_query_by_name()` when you specifically want the lower-level named connection/query call.
+
+Python API errors are normal Python exceptions. The CLI-only JSON stderr envelope is not used by the Python API.
+
+Supported public imports are exported from `sql2json.__all__`. Internal helpers in `sql2json.sql2json`, `sql2json.__main__`, or `sql2json.parameter.parameter_parser` are implementation details and should not be imported by users. `sql2json.parameter.parse_parameter` remains public for date-variable resolution; lower-level date helper functions are private.
+
+See [examples/python_api](examples/python_api) for runnable examples covering named queries, inline SQL, discovery, output shapes, JSON columns, date parameters, SQL files, and exception handling.
+
+### Public API surface
+
+`sql2json` treats the following as its supported, public surface. Everything else is an implementation detail that may change without notice.
+
+**Python API** — the names exported from `sql2json.__all__`:
+
+- `run_query2json`, `run_query_by_name`
+- `list_connections`, `list_queries`
+- `parse_parameter` (from `sql2json.parameter`)
+- `__version__`
+
+**CLI compatibility contract** — the supported, stable CLI behavior:
+
+- Documented flags: `--name`, `--query`, plus `--first`, `--key`, `--value`, `--wrapper`, `--jsonkeys`, `--format`, `--output`, `--timezone`, and arbitrary `--<bind_param>` values.
+- Output shapes: JSON to stdout (default), CSV and Excel via `--format`/`--output`.
+- Error contract: a structured JSON error envelope on stderr with a non-zero exit code.
+
+**Versioning:** `sql2json` is pre-1.0 (`0.x`) and carries **no API stability guarantee** under SemVer — breaking changes ship in a minor bump (e.g. `0.1.x → 0.2.0`), not a major. A real stability contract would be an explicit `1.0.0` decision.
+
 ## For AI agents
 
 `sql2json` is designed to be called as a subprocess by AI agents and LLMs. It outputs clean JSON to stdout, structured errors to stderr, and supports discovery commands so an agent can orient itself before querying.
