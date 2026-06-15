@@ -369,6 +369,32 @@ python -m sql2json --name mysql --query sales_monthly --date_from "CURRENT_DATE"
 
 > **Note:** CSV requires `--output` (it cannot be written to stdout).
 
+## Python API
+
+The supported Python API mirrors the user-facing CLI capabilities while keeping implementation details private:
+
+```python
+from sql2json import list_connections, list_queries, run_query2json, run_query_by_name
+
+rows = run_query2json(
+    name="sqlite:///:memory:",
+    query="SELECT :person_name AS name, :score AS score",
+    person_name="Ada",
+    score=42,
+)
+
+connections = list_connections("/path/to/config.json")
+queries = list_queries("/path/to/config.json")
+```
+
+Use `run_query2json()` for inline SQL, named queries, SQL files with `@/path.sql`, bind/date parameters, `first`, `key`, `value`, `wrapper`, `jsonkeys`, and `timezone`. Use `run_query_by_name()` when you specifically want the lower-level named connection/query call.
+
+Python API errors are normal Python exceptions. The CLI-only JSON stderr envelope is not used by the Python API.
+
+Supported public imports are exported from `sql2json.__all__`. Internal helpers in `sql2json.sql2json`, `sql2json.__main__`, or `sql2json.parameter.parameter_parser` are implementation details and should not be imported by users. `sql2json.parameter.parse_parameter` remains public for date-variable resolution; lower-level date helper functions are private.
+
+See [examples/python_api](examples/python_api) for runnable examples covering named queries, inline SQL, discovery, output shapes, JSON columns, date parameters, SQL files, and exception handling.
+
 ## For AI agents
 
 `sql2json` is designed to be called as a subprocess by AI agents and LLMs. It outputs clean JSON to stdout, structured errors to stderr, and supports discovery commands so an agent can orient itself before querying.

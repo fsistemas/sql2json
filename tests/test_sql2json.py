@@ -1,13 +1,26 @@
 import datetime
+from importlib.metadata import version
 
 import pytest
+import sql2json
 
 from sql2json import __version__, run_query_by_name
 from sql2json.sql2json import _current_date
 
 
-def test_version():
-    assert __version__ == "0.1.11"
+def test_version_matches_package_metadata():
+    assert __version__ == version("sql2json")
+
+
+def test_top_level_public_surface():
+    assert sql2json.__all__ == [
+        "__version__",
+        "parse_parameter",
+        "list_connections",
+        "list_queries",
+        "run_query_by_name",
+        "run_query2json",
+    ]
 
 
 def test_run_query_by_name_empty_param():

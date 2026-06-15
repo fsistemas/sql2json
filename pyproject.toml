@@ -1,6 +1,6 @@
 [project]
 name = "sql2json"
-version = "0.1.11"
+version = "0.2.0"
 description = "Tool to run a SQL query and convert result to JSON"
 authors = [
     { name = "Francisco Perez", email = "fsistemas@gmail.com" }
