@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+> **Next release target: `0.2.0` (minor bump, breaking under SemVer).**
+> The next release tightens the public Python API: the `sql2json.parameter`
+> date helpers (`is_number`, `first_day_month`, `first_day_year`,
+> `last_day_month`, `last_day_year`, `parse_field`, `parse_formula`) become
+> private and are no longer re-exported. `parse_parameter` remains the
+> supported public entry point. `sql2json` is pre-1.0, so this ships as a
+> minor bump with **no formal deprecation cycle**.
+>
+> The API-boundary work (privatizing helpers, adding `__all__`, and
+> single-sourcing the version via `importlib.metadata.version("sql2json")`)
+> will land as part of this release; its CHANGELOG entries land with that change.
+>
+> **Migration:** if you imported any of those date helpers from
+> `sql2json.parameter`, switch to the public `parse_parameter` for
+> date-variable resolution.
+
 ### Added
 - `--timezone` flag: accepts an IANA timezone name (e.g. `--timezone America/New_York`, `--timezone UTC`) and uses it when resolving `CURRENT_DATE`, `START_CURRENT_MONTH`, and all other date variables. Defaults to local system timezone (backward-compatible). An invalid timezone name produces a structured JSON error on stderr and a non-zero exit code.
 
