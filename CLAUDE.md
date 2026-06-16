@@ -78,7 +78,7 @@ Query values prefixed with `@` are treated as file paths to `.sql` files.
 | `--first` | Return only the first row |
 | `--key` | Extract a single column as the value (or use as dict key with `--value`) |
 | `--value` | Used with `--key` to produce `{key_col: value_col}` dicts |
-| `--wrapper` | Wrap the result list in `{"data": [...]}` |
+| `--wrapper` | Wrap the result. `True`/bare flag wraps under `{"data": [...]}`; a non-empty string wraps under that key (`--wrapper items` → `{"items": [...]}`); `False`/`""` returns it unwrapped |
 | `--jsonkeys` | Comma-separated column names whose string values should be parsed as JSON |
 | `--format` | `json` (default), `csv`, or `excel` |
 | `--output` | Save to file instead of printing; filename supports `{CURRENT_DATE}` etc. |

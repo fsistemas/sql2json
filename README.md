@@ -259,7 +259,7 @@ python -m sql2json [options] [--param value ...]
 | `--first` | `False` | Return only the first row (object, not array) |
 | `--key` | `""` | Extract one column as value (scalar with `--first`), or dict key (with `--value`) |
 | `--value` | `""` | Used with `--key` to produce `{key_col: value_col}` dicts |
-| `--wrapper` | `False` | Wrap result in `{"data": [...]}` |
+| `--wrapper` | `False` | Wrap result in `{"data": [...]}` (bare `--wrapper`/`True`); pass a string (e.g. `--wrapper=items`) to wrap under a custom key: `{"items": [...]}` |
 | `--jsonkeys` | `""` | Comma-separated columns whose string values should be parsed as JSON |
 | `--format` | `json` | Output format: `json`, `csv`, `excel` |
 | `--output` | _(stdout)_ | Save to file; filename supports `{CURRENT_DATE}` etc. |
@@ -362,6 +362,20 @@ python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT
 ```json
 {
     "data": [
+        {"month": "January", "sales": 5000},
+        {"month": "February", "sales": 3000}
+    ]
+}
+```
+
+Pass a string to wrap under a custom key instead of `data`:
+
+```bash
+python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --wrapper=items
+```
+```json
+{
+    "items": [
         {"month": "January", "sales": 5000},
         {"month": "February", "sales": 3000}
     ]

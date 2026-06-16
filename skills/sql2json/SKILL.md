@@ -122,6 +122,15 @@ sql2json --name mydb --query 'SELECT id, name FROM users' --key id --value name
 # → {"1": "Alice", "2": "Bob"}
 ```
 
+**Wrap rows under a top-level key** (handy for dashboard/API payloads):
+
+```bash
+sql2json --name mydb --query users --wrapper          # → {"data": [...]}
+sql2json --name mydb --query users --wrapper items     # → {"items": [...]}
+```
+
+`--wrapper` (bare) wraps under `"data"`; pass a name (`--wrapper items`) to wrap under that key instead. Omit it for a bare array.
+
 ## Docker
 
 Run without installing anything locally:

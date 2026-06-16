@@ -162,7 +162,7 @@ def parse_json_columns(result: dict, jsonkeys: str = "") -> dict:
 def run_query2json(
     name: str = "default",
     query: str = "default",
-    wrapper: bool = False,
+    wrapper: Union[bool, str] = False,
     first: bool = False,
     key: str = "",
     value: str = "",
@@ -175,7 +175,9 @@ def run_query2json(
 
     name: Connection name in config file or a SQLAlchemy connection string.
     query: Query name in config file, raw SQL, or @/path/to/file.sql.
-    wrapper: Wrap result list in {"data": [...]}.
+    wrapper: Wrap result list. True wraps under "data" ({"data": [...]}); a
+        non-empty string wraps under that key (e.g. "items" -> {"items": [...]});
+        False or "" returns the result unwrapped.
     first: Return only the first row.
     key: Column name to use as key (with value) or extract as scalar (with first).
     value: Column name to use as value (used with key).
@@ -213,7 +215,9 @@ def run_query2json(
                 item.get(key) if key and key in item else item for item in results
             ]
 
-    if wrapper:
+    if isinstance(wrapper, str) and wrapper:
+        return {wrapper: result}
+    elif wrapper:
         return {"data": result}
     else:
         return result

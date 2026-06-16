@@ -82,6 +82,45 @@ class TestWrapper:
         result = run_query2json(name=MEMORY, query=TWO_ROWS, wrapper=True, first=True)
         assert result == {"data": {"month": "January", "sales": 5000}}
 
+    def test_wrapper_string_uses_custom_key(self):
+        result = run_query2json(name=MEMORY, query=TWO_ROWS, wrapper="items")
+        assert result == {
+            "items": [
+                {"month": "January", "sales": 5000},
+                {"month": "February", "sales": 3000},
+            ]
+        }
+
+    def test_wrapper_string_with_first(self):
+        result = run_query2json(
+            name=MEMORY, query=TWO_ROWS, wrapper="items", first=True
+        )
+        assert result == {"items": {"month": "January", "sales": 5000}}
+
+    def test_wrapper_empty_string_does_not_wrap(self):
+        result = run_query2json(name=MEMORY, query=TWO_ROWS, wrapper="")
+        assert result == [
+            {"month": "January", "sales": 5000},
+            {"month": "February", "sales": 3000},
+        ]
+
+    def test_wrapper_false_does_not_wrap(self):
+        result = run_query2json(name=MEMORY, query=TWO_ROWS, wrapper=False)
+        assert result == [
+            {"month": "January", "sales": 5000},
+            {"month": "February", "sales": 3000},
+        ]
+
+    def test_wrapper_string_wraps_transformed_key_value_result(self):
+        result = run_query2json(
+            name=MEMORY,
+            query=TWO_ROWS,
+            wrapper="items",
+            key="month",
+            value="sales",
+        )
+        assert result == {"items": [{"January": 5000}, {"February": 3000}]}
+
 
 class TestJsonKeys:
     def test_string_column_is_parsed_into_object(self):
