@@ -8,3 +8,4 @@ print(
     run_query2json(name="sqlite:///:memory:", query=query, key="month", value="sales")
 )
 print(run_query2json(name="sqlite:///:memory:", query=query, wrapper=True))
+print(run_query2json(name="sqlite:///:memory:", query=query, wrapper="items"))
