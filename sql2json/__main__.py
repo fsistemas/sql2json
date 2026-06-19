@@ -151,5 +151,9 @@ def handle_run_query2json(
         sys.exit(1)
 
 
-if __name__ == "__main__":
+def main():
     fire.Fire(handle_run_query2json)
+
+
+if __name__ == "__main__":
+    main()

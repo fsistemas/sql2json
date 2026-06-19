@@ -21,6 +21,10 @@ Install once, use from any project:
 pip install sql2json
 ```
 
+Examples here use the `sql2json` command, available since **v0.2.1**. On `0.2.0`
+and earlier — or if the command is not on `PATH` — use the equivalent
+`python -m sql2json ...` form instead.
+
 ## When to Use
 
 Use this skill when you need to:

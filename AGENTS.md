@@ -2,6 +2,8 @@
 
 `sql2json` runs SQL queries via SQLAlchemy and outputs JSON or CSV to stdout. It is invoked as a CLI tool or imported as a Python package — no framework coupling, no MCP server required.
 
+> **Invocation:** examples below use the `sql2json` command, available **since v0.2.1**. On `0.2.0` and earlier — or when the package's scripts directory is not on `PATH` — substitute the equivalent `python -m sql2json ...` form.
+
 ---
 
 ## Strategy for Agents
@@ -21,11 +23,11 @@ Before calling a query, an agent can inspect what is configured:
 
 ```bash
 # List available database connections
-python -m sql2json --list-connections --config /path/to/config.json
+sql2json --list-connections --config /path/to/config.json
 # → ["default", "mysql", "reporting"]
 
 # List available named queries
-python -m sql2json --list-queries --config /path/to/config.json
+sql2json --list-queries --config /path/to/config.json
 # → ["default", "sales_monthly", "total_users"]
 ```
 
@@ -113,25 +115,25 @@ Extra kwargs become SQL bind parameters (`:param_name` in the query). Values tha
 
 ```bash
 # Run a named query with a date parameter
-python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1"
+sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1"
 
 # Run inline SQL directly
-python -m sql2json --name mysql --query "SELECT COUNT(*) AS total FROM orders WHERE date >= :since" --since "CURRENT_DATE-7"
+sql2json --name mysql --query "SELECT COUNT(*) AS total FROM orders WHERE date >= :since" --since "CURRENT_DATE-7"
 
 # Return only the first row, extract a single column value
-python -m sql2json --name mysql --query total_sales --date_from "CURRENT_DATE-10" --first --key sales
+sql2json --name mysql --query total_sales --date_from "CURRENT_DATE-10" --first --key sales
 
 # Return results as {key_col: value_col} pairs
-python -m sql2json --name mysql --query sales_monthly --key month --value sales
+sql2json --name mysql --query sales_monthly --key month --value sales
 
 # Wrap in {"data": [...]} for downstream systems
-python -m sql2json --name mysql --query sales_monthly --wrapper
+sql2json --name mysql --query sales_monthly --wrapper
 
 # Load query from a .sql file
-python -m sql2json --name mysql --query "@/path/to/my_query.sql" --min_age 18
+sql2json --name mysql --query "@/path/to/my_query.sql" --min_age 18
 
 # Save output to a dated CSV file
-python -m sql2json --name mysql --query sales_monthly --format csv --output sales_{CURRENT_DATE}
+sql2json --name mysql --query sales_monthly --format csv --output sales_{CURRENT_DATE}
 ```
 
 ---

@@ -5,7 +5,7 @@ Run SQL queries and get JSON (or CSV) on stdout — pipe it anywhere.
 `sql2json` connects to any SQLAlchemy-supported database, executes a query, and writes the results as JSON to standard output. No server, no framework, no boilerplate.
 
 ```bash
-python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1"
+sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1"
 # → [{"month": "January", "sales": 5000}, {"month": "February", "sales": 3000}]
 ```
 
@@ -35,6 +35,28 @@ pip install "sql2json[postgres,mysql]"
 Other databases work too — install any
 [SQLAlchemy-supported driver](https://docs.sqlalchemy.org/en/20/dialects/) (e.g.
 `pyodbc` for MS SQL Server) alongside `sql2json`.
+
+### Running it
+
+Once installed, invoke the tool directly:
+
+```bash
+sql2json --name default --query default
+```
+
+The `sql2json` command is available **since v0.2.1**. The original
+`python -m sql2json ...` form still works and is equivalent — use it on `0.2.0`
+and earlier, or whenever the package is installed but its scripts directory is
+not on your `PATH`.
+
+For a global, isolated install that puts `sql2json` on your `PATH` without
+touching your project environments:
+
+```bash
+pipx install sql2json
+# or
+uv tool install sql2json
+```
 
 ## Docker
 
@@ -202,14 +224,14 @@ EOF
 **2. Run a query:**
 
 ```bash
-python -m sql2json
+sql2json
 # → [{"a": 1, "b": 2}]
 ```
 
 **3. Try inline SQL:**
 
 ```bash
-python -m sql2json --name default --query "SELECT date('now') AS today"
+sql2json --name default --query "SELECT date('now') AS today"
 # → [{"today": "2026-05-16"}]
 ```
 
@@ -248,7 +270,7 @@ Connection strings follow [SQLAlchemy URL format](https://docs.sqlalchemy.org/en
 ## CLI reference
 
 ```bash
-python -m sql2json [options] [--param value ...]
+sql2json [options] [--param value ...]
 ```
 
 | Flag | Default | Description |
@@ -273,10 +295,10 @@ Extra `--key value` flags become SQL bind parameters (`:key` in your query).
 Before writing a query, inspect what is configured:
 
 ```bash
-python -m sql2json --list-connections
+sql2json --list-connections
 # → ["default", "mysql", "reporting"]
 
-python -m sql2json --list-queries
+sql2json --list-queries
 # → ["default", "sales_monthly", "total_sales"]
 ```
 
@@ -315,7 +337,7 @@ START_CURRENT_YEAR-1    → first day of last year
 ### Array of objects (default)
 
 ```bash
-python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1"
+sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1"
 ```
 ```json
 [
@@ -327,7 +349,7 @@ python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT
 ### First row only (`--first`)
 
 ```bash
-python -m sql2json --name mysql --query total_sales --date_from "CURRENT_DATE-10" --first
+sql2json --name mysql --query total_sales --date_from "CURRENT_DATE-10" --first
 ```
 ```json
 {"sales": 500}
@@ -336,7 +358,7 @@ python -m sql2json --name mysql --query total_sales --date_from "CURRENT_DATE-10
 ### Single value (`--first --key`)
 
 ```bash
-python -m sql2json --name mysql --query total_sales --date_from "CURRENT_DATE-10" --first --key sales
+sql2json --name mysql --query total_sales --date_from "CURRENT_DATE-10" --first --key sales
 ```
 ```
 500
@@ -345,7 +367,7 @@ python -m sql2json --name mysql --query total_sales --date_from "CURRENT_DATE-10
 ### Key-value pairs (`--key --value`)
 
 ```bash
-python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --key month --value sales
+sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --key month --value sales
 ```
 ```json
 [
@@ -357,7 +379,7 @@ python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT
 ### Wrapped for dashboards (`--wrapper`)
 
 ```bash
-python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --wrapper
+sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --wrapper
 ```
 ```json
 {
@@ -371,7 +393,7 @@ python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT
 Pass a string to wrap under a custom key instead of `data`:
 
 ```bash
-python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --wrapper=items
+sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --wrapper=items
 ```
 ```json
 {
@@ -387,7 +409,7 @@ python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT
 When a column contains a JSON string from a database JSON function, use `--jsonkeys` to parse it:
 
 ```bash
-python -m sql2json --name mysql --query json_report --jsonkeys "payload,metadata"
+sql2json --name mysql --query json_report --jsonkeys "payload,metadata"
 ```
 
 Without `--jsonkeys` those columns would be escaped strings; with it they are inlined as JSON.
@@ -397,17 +419,17 @@ Without `--jsonkeys` those columns would be escaped strings; with it they are in
 No need to define every query in the config file:
 
 ```bash
-python -m sql2json --name mysql --query "SELECT NOW() AS ts" --first --key ts
+sql2json --name mysql --query "SELECT NOW() AS ts" --first --key ts
 ```
 
 ### External `.sql` file
 
 ```bash
 # Defined in config.json as "@/path/to/file.sql"
-python -m sql2json --name mysql --query long_query --min_age 18
+sql2json --name mysql --query long_query --min_age 18
 
 # Or pass the path directly
-python -m sql2json --name mysql --query "@/path/to/my_query.sql" --min_age 18
+sql2json --name mysql --query "@/path/to/my_query.sql" --min_age 18
 ```
 
 ## File output
@@ -416,26 +438,26 @@ Use `--output` to write to a file instead of stdout. The `--format` flag control
 
 ```bash
 # CSV file
-python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --format csv --output Sales
+sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --format csv --output Sales
 # → Sales.csv
 
 # Excel file
-python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --format excel --output Sales
+sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --format excel --output Sales
 # → Sales.xls
 
 # JSON file
-python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --format json --output Sales
+sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1" --format json --output Sales
 # → Sales.json
 ```
 
 **Dated filenames** — use date variables in `--output`:
 
 ```bash
-python -m sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH" \
+sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH" \
     --format csv --output "Sales_{START_CURRENT_MONTH}_{CURRENT_DATE}"
 # → Sales_2026-05-01_2026-05-16.csv
 
-python -m sql2json --name mysql --query sales_monthly --date_from "CURRENT_DATE" \
+sql2json --name mysql --query sales_monthly --date_from "CURRENT_DATE" \
     --format csv --output "reports/Sales_{CURRENT_DATE}"
 # → reports/Sales_2026-05-16.csv
 ```
