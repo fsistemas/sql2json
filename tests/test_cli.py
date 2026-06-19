@@ -7,6 +7,7 @@ including fire arg parsing, discovery flags, and JSON error output.
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from decimal import Decimal
@@ -223,3 +224,28 @@ class TestTimezone:
         result = run_cli("--timezone", "Invalid/Zone", "--config", cfg)
         error = json.loads(result.stderr)
         assert "error" in error
+
+
+class TestEntryPoint:
+    """The `sql2json` console_scripts entry point (pyproject [project.scripts])."""
+
+    def test_main_dispatches_to_fire(self, monkeypatch):
+        import sql2json.__main__ as cli
+
+        called = {}
+        monkeypatch.setattr(cli.fire, "Fire", lambda fn: called.setdefault("fn", fn))
+        cli.main()
+        assert called["fn"] is cli.handle_run_query2json
+
+    def test_console_script_runs(self, tmp_path):
+        if shutil.which("sql2json") is None:
+            pytest.skip("sql2json console script not installed on PATH")
+        cfg = str(tmp_path / "config.json")
+        _write_config(cfg, CONFIG)
+        result = subprocess.run(
+            ["sql2json", "--config", cfg],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        assert json.loads(result.stdout)[0]["a"] == 1

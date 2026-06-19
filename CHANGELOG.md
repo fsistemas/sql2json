@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-19
+
+### Added
+- `sql2json` console entry point (`[project.scripts]` → `sql2json.__main__:main`), so the tool can be run as a plain `sql2json ...` command after install instead of only `python -m sql2json ...`. The `python -m sql2json` form continues to work unchanged. This also enables isolated global installs via `pipx install sql2json` / `uv tool install sql2json`.
+
 ## [0.2.0] - 2026-06-15
 
 > **`0.2.0` is a minor bump that ships breaking changes under the pre-1.0 SemVer

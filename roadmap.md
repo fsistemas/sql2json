@@ -48,10 +48,10 @@ exit code → 1
 Two new additive flags that output JSON to stdout and exit 0.
 
 ```bash
-python -m sql2json --list-connections
+sql2json --list-connections
 # → ["default", "mysql", "postgres"]
 
-python -m sql2json --list-queries
+sql2json --list-queries
 # → ["default", "sales_monthly", "total_sales"]
 ```
 

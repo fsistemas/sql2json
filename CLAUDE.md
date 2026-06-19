@@ -30,8 +30,8 @@ uv run --extra dev mypy
 # Tests with coverage (gated at 90% via fail_under in pyproject.toml)
 uv run --extra dev pytest --cov
 
-# Run the CLI tool
-python -m sql2json --name default --query default
+# Run the CLI tool (since 0.2.1; `python -m sql2json ...` is equivalent)
+sql2json --name default --query default
 
 # Build Docker image
 docker build -t sql2json .
@@ -39,7 +39,7 @@ docker build -t sql2json .
 
 ## Architecture
 
-`sql2json` is a CLI tool that runs SQL queries via SQLAlchemy and outputs JSON, CSV, or Excel. It is invoked as `python -m sql2json` (entry point: `__main__.py` using `fire`).
+`sql2json` is a CLI tool that runs SQL queries via SQLAlchemy and outputs JSON, CSV, or Excel. Since 0.2.1 it is invoked as the `sql2json` console command (declared in `[project.scripts]`, target `sql2json.__main__:main`); the equivalent `python -m sql2json` form still works. Both dispatch through `fire`.
 
 ### Data flow
 
