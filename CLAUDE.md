@@ -33,8 +33,11 @@ uv run --extra dev pytest --cov
 # Run the CLI tool (since 0.2.1; `python -m sql2json ...` is equivalent)
 sql2json --name default --query default
 
-# Build Docker image
-docker build -t sql2json .
+# Build the Docker image (installs sql2json from PyPI; pass VERSION to pin a
+# release, omit it for the latest). `podman build ...` works identically.
+docker build -t sql2json .                      # latest PyPI release
+docker build --build-arg VERSION=0.2.1 -t sql2json .
+# The official image is published at docker.io/fsistemas/sql2json (see RELEASING.md).
 ```
 
 ## Architecture
@@ -128,6 +131,8 @@ Query values prefixed with `@` are treated as file paths to `.sql` files.
    uv publish
    ```
    `uv build` produces `dist/sql2json-0.1.12.tar.gz` and the wheel. `uv publish` uploads to PyPI (requires a token configured via `UV_PUBLISH_TOKEN` or `~/.pypirc`).
+
+8. **Publish the Docker image** to `docker.io/fsistemas/sql2json` from your local machine (not CI). The image installs `sql2json==<version>` from PyPI, so this runs **after** step 7. The maintainer uses Podman; `docker buildx` is equivalent. Push the immutable `:X.Y.Z` tag every release and move `:latest` only for stable releases. See `RELEASING.md` for the full Podman/Docker commands and the verify step.
 
 ### Notes
 

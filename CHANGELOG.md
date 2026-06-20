@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Official Docker image published to [`docker.io/fsistemas/sql2json`](https://hub.docker.com/r/fsistemas/sql2json), so the tool can be run with `podman run docker.io/fsistemas/sql2json ...` (or `docker run ...`) without building from source. Currently published for `linux/amd64`; the release process documents the multi-arch (`+ linux/arm64`) publish path for when host emulation is available. Supported tags: `latest` (newest stable) and immutable `X.Y.Z` (pinned). Documented in the README "Docker" section.
+
+### Changed
+- The `Dockerfile` now installs `sql2json` from PyPI (build arg `VERSION` pins a release; omitted installs the latest) instead of copying the working tree, so a tagged image always matches the published release. Its entrypoint is now the `sql2json` console script (was `python -m sql2json`), and it carries OCI image labels.
+- Documented the local (Podman / Docker) image publish + verify step in `RELEASING.md` and CLAUDE.md, run after the PyPI publish.
+
 ## [0.2.1] - 2026-06-19
 
 ### Added

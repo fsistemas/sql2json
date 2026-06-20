@@ -60,36 +60,54 @@ uv tool install sql2json
 
 ## Docker
 
-The image includes drivers for PostgreSQL (`psycopg2-binary`) and MySQL / MariaDB (`PyMySQL`) in addition to SQLite, which is built into Python.
+An official image is published to Docker Hub at
+[`docker.io/fsistemas/sql2json`](https://hub.docker.com/r/fsistemas/sql2json).
+It bundles drivers for PostgreSQL (`psycopg2-binary`) and MySQL / MariaDB
+(`PyMySQL`) in addition to SQLite, which is built into Python, and is built for
+both `linux/amd64` and `linux/arm64`.
 
-Build the image from the repository root:
+The examples below use [Podman](https://podman.io/); every command works
+identically with `docker` — just swap the executable name.
+
+Quick test without a config file (pulls the image on first run):
 
 ```bash
-docker build -t sql2json .
-```
-
-Quick test without a config file:
-
-```bash
-docker run --rm sql2json --query "SELECT 1 AS a, 2 AS b"
+podman run --rm docker.io/fsistemas/sql2json --query "SELECT 1 AS a, 2 AS b"
 # → [{"a": 1, "b": 2}]
 ```
+
+### Supported tags
+
+| Tag | Meaning |
+|---|---|
+| `latest` | Newest **stable** release. Moves on every release — convenient, but not pinned. |
+| `X.Y.Z` (e.g. `0.2.1`) | A specific release. **Immutable** — recommended for production and CI. |
+
+```bash
+podman pull docker.io/fsistemas/sql2json:0.2.1   # pin a release
+podman pull docker.io/fsistemas/sql2json:latest  # newest stable
+```
+
+### Usage
+
+The image runs as an unprivileged user (`app`), whose home is `/home/app`, so
+config is read from `/home/app/.sql2json`.
 
 Run with your own config by mounting `~/.sql2json`:
 
 ```bash
-docker run --rm \
-  -v ~/.sql2json:/root/.sql2json \
-  sql2json --name default --query sales_monthly --date_from "START_CURRENT_MONTH-1"
+podman run --rm \
+  -v ~/.sql2json:/home/app/.sql2json \
+  docker.io/fsistemas/sql2json --name default --query sales_monthly --date_from "START_CURRENT_MONTH-1"
 ```
 
 For SQLite, mount both the config directory and the database file. Point the connection string in your config to the in-container path:
 
 ```bash
-docker run --rm \
-  -v ~/.sql2json:/root/.sql2json \
+podman run --rm \
+  -v ~/.sql2json:/home/app/.sql2json \
   -v /path/to/mydb.sqlite:/data/mydb.sqlite \
-  sql2json --name default --query default
+  docker.io/fsistemas/sql2json --name default --query default
 ```
 
 ```json
@@ -100,22 +118,41 @@ docker run --rm \
 }
 ```
 
-Write output files by mounting a host directory to `/workspace`, the container working directory:
+Write output files by mounting a host directory to `/workspace`, the container working directory. Because the container runs as a non-root user, map the container user to your host user so the written files are owned by you — `--userns=keep-id` for Podman, `--user $(id -u):$(id -g)` for Docker:
 
 ```bash
-docker run --rm \
-  -v ~/.sql2json:/root/.sql2json \
+podman run --rm --userns=keep-id \
+  -v ~/.sql2json:/home/app/.sql2json \
   -v $(pwd)/reports:/workspace \
-  sql2json --name default --query sales_monthly \
+  docker.io/fsistemas/sql2json --name default --query sales_monthly \
     --format csv --output "Sales_{CURRENT_DATE}"
 # → ./reports/Sales_2026-05-17.csv on the host
+
+# Docker equivalent:
+docker run --rm --user $(id -u):$(id -g) \
+  -v ~/.sql2json:/home/app/.sql2json \
+  -v $(pwd)/reports:/workspace \
+  docker.io/fsistemas/sql2json --name default --query sales_monthly \
+    --format csv --output "Sales_{CURRENT_DATE}"
 ```
 
 MS SQL Server needs system-level ODBC libraries, so install the driver in a derived image:
 
 ```dockerfile
-FROM sql2json
+FROM docker.io/fsistemas/sql2json
 RUN pip install --no-cache-dir pyodbc
+```
+
+### Build from source (development)
+
+The published image installs `sql2json` from PyPI. To build an image from a
+local checkout instead — for example to try an unreleased change — pass the
+`VERSION` build arg (or omit it to install the latest PyPI release):
+
+```bash
+podman build -t sql2json .                       # latest PyPI release
+podman build --build-arg VERSION=0.2.1 -t sql2json .   # pin a release
+podman run --rm sql2json --query "SELECT 1 AS a, 2 AS b"
 ```
 
 ### Try it with docker compose
