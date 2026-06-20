@@ -35,7 +35,7 @@ services:
   sql2json:
     build: .
     volumes:
-      - ./docker/config.json:/root/.sql2json/config.json
+      - ./docker/config.json:/home/app/.sql2json/config.json
     depends_on:
       postgres:
         condition: service_healthy

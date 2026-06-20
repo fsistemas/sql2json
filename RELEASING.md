@@ -68,6 +68,106 @@ requesting one rather than bumping the version yourself.
    uv publish    # uploads to PyPI
    ```
 
+8. **Publish the Docker image** to
+   [`docker.io/fsistemas/sql2json`](https://hub.docker.com/r/fsistemas/sql2json).
+
+   This runs from your local machine — it is **not** wired into CI. The image
+   installs `sql2json==<version>` from PyPI, so it must run **after** step 7 (the
+   version has to exist on PyPI first). Both Podman and Docker are shown; either
+   works.
+
+   First, log in to Docker Hub once (use a Docker Hub
+   [access token](https://hub.docker.com/settings/security) as the password,
+   not your account password):
+
+   ```bash
+   podman login docker.io   # username: fsistemas
+   # or: docker login docker.io
+   ```
+
+   **One-time setup for cross-arch builds.** Building a non-native architecture
+   (e.g. `linux/arm64` on an `amd64` host) requires `qemu-user-static`
+   registered as kernel `binfmt_misc` handlers. This is a **host-level** change
+   that needs real root — running the `tonistiigi/binfmt` installer inside a
+   *rootless* container does **not** work (the registration can't reach the host
+   kernel, and the build fails with `exec /bin/sh: Exec format error`). Install
+   it once with your distro package or as root:
+
+   ```bash
+   # Arch / Manjaro:
+   sudo pacman -S qemu-user-static qemu-user-static-binfmt
+   # Debian / Ubuntu:
+   sudo apt install qemu-user-static binfmt-support
+   # Or, as real root (not rootless), the portable installer:
+   sudo podman run --rm --privileged docker.io/tonistiigi/binfmt --install arm64
+   # Verify the handler is registered on the host:
+   ls /proc/sys/fs/binfmt_misc/ | grep qemu-aarch64
+   ```
+
+   **Podman** (multi-arch via a manifest list):
+
+   ```bash
+   podman manifest create docker.io/fsistemas/sql2json:0.2.1
+   podman build --platform linux/amd64,linux/arm64 \
+     --build-arg VERSION=0.2.1 \
+     --manifest docker.io/fsistemas/sql2json:0.2.1 .
+   podman manifest push docker.io/fsistemas/sql2json:0.2.1 \
+     docker.io/fsistemas/sql2json:0.2.1
+   # Stable releases only — also publish the moving `latest` tag:
+   podman manifest push docker.io/fsistemas/sql2json:0.2.1 \
+     docker.io/fsistemas/sql2json:latest
+   ```
+
+   **amd64-only fallback** (if qemu/arm64 emulation isn't available): publish a
+   single-arch image instead — still useful for most servers and CI. Re-publish
+   as multi-arch once the host is set up. Pass `--platform linux/amd64
+   --pull=always` to force the correct base image (see the cached-arch gotcha
+   below):
+
+   ```bash
+   podman build --platform linux/amd64 --pull=always --build-arg VERSION=0.2.1 \
+     -t docker.io/fsistemas/sql2json:0.2.1 \
+     -t docker.io/fsistemas/sql2json:latest .
+   podman push docker.io/fsistemas/sql2json:0.2.1
+   podman push docker.io/fsistemas/sql2json:latest   # stable releases only
+   ```
+
+   > **Cached-arch base-image gotcha.** After a cross-arch / multi-arch build
+   > attempt, your local image store can hold a *non-native* base image (e.g. an
+   > `arm64` `python:3.10-slim` pulled during an `--platform linux/arm64`
+   > experiment). Podman will silently reuse that cached base for a subsequent
+   > plain `podman build`, producing an image that fails to run with
+   > `exec /bin/sh: Exec format error` and a build-time warning like
+   > `image platform (linux/arm64/v8) does not match the expected platform
+   > (linux/amd64)`. Always build with an explicit `--platform` **and**
+   > `--pull=always` so the correct base image is fetched rather than reusing the
+   > wrong cached one. To inspect what's cached: `podman images --format
+   > '{{.Repository}}:{{.Tag}} {{.Arch}}'`.
+
+   **Docker** (`buildx` equivalent):
+
+   ```bash
+   docker buildx build --platform linux/amd64,linux/arm64 \
+     --build-arg VERSION=0.2.1 \
+     -t docker.io/fsistemas/sql2json:0.2.1 \
+     -t docker.io/fsistemas/sql2json:latest \
+     --push .
+   ```
+
+   **Tagging rules:** push the immutable `:0.2.1` tag every release; move
+   `:latest` **only** for stable releases (never for pre-releases / RCs). Treat
+   published version tags as write-once.
+
+   **Verify** the pushed image (either tool):
+
+   ```bash
+   podman pull docker.io/fsistemas/sql2json:0.2.1
+   podman run --rm docker.io/fsistemas/sql2json:0.2.1 --query "SELECT 1 AS a, 2 AS b"
+   # → [{"a": 1, "b": 2}]
+   podman run --rm --entrypoint pip docker.io/fsistemas/sql2json:0.2.1 \
+     show sql2json | grep ^Version   # must read: Version: 0.2.1
+   ```
+
 ## Notes
 
 - Build artifacts (`dist/`, `*.egg-info/`) are in `.gitignore` — never commit
