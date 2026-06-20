@@ -137,15 +137,41 @@ sql2json --name mydb --query users --wrapper items     # → {"items": [...]}
 
 ## Docker
 
-Run without installing anything locally:
+Run the official multi-arch image without installing anything locally. The image
+is published on Docker Hub at <https://hub.docker.com/r/fsistemas/sql2json> as
+`docker.io/fsistemas/sql2json` for `linux/amd64` and `linux/arm64`.
 
 ```bash
 # Quick test (built-in SQLite fallback — no config needed)
-docker run --rm sql2json --query "SELECT 1 AS a, 2 AS b"
+podman run --rm docker.io/fsistemas/sql2json --query "SELECT 1 AS a, 2 AS b"
+# → [{"a": 1, "b": 2}]
 
-# With your config
-docker run --rm -v ~/.sql2json:/root/.sql2json \
-  sql2json --name mydb --query users
+# Docker equivalent
+docker run --rm docker.io/fsistemas/sql2json --query "SELECT 1 AS a, 2 AS b"
+
+# Pin a production/CI release instead of using latest
+podman pull docker.io/fsistemas/sql2json:0.2.1
+```
+
+The container runs as the unprivileged `app` user and reads config from
+`/home/app/.sql2json`:
+
+```bash
+podman run --rm -v ~/.sql2json:/home/app/.sql2json \
+  docker.io/fsistemas/sql2json --name mydb --query users
+```
+
+For release publishing from an amd64 maintainer machine, the known working
+multi-arch path is rootful Podman with host-level QEMU/binfmt:
+
+```bash
+sudo podman run --rm --platform linux/arm64 --pull=always \
+  docker.io/library/alpine uname -m   # must print: aarch64
+sudo podman build --platform linux/amd64,linux/arm64 --pull=always \
+  --build-arg VERSION=0.2.1 \
+  --manifest docker.io/fsistemas/sql2json:0.2.1 .
+sudo podman manifest push docker.io/fsistemas/sql2json:0.2.1 \
+  docker.io/fsistemas/sql2json:0.2.1
 ```
 
 ## Sync strategy
