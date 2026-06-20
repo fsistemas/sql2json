@@ -104,11 +104,33 @@ requesting one rather than bumping the version yourself.
    ls /proc/sys/fs/binfmt_misc/ | grep qemu-aarch64
    ```
 
-   **Podman** (multi-arch via a manifest list):
+   **Rootful Podman multi-arch publish** (maintainer-tested on Manjaro amd64):
+   if rootless Podman cannot execute arm64 containers, keep local control by
+   using `sudo podman`. Rootful Podman uses separate image storage and registry
+   auth, so log in under `sudo` too.
 
    ```bash
-   podman manifest create docker.io/fsistemas/sql2json:0.2.1
-   podman build --platform linux/amd64,linux/arm64 \
+   sudo podman run --rm --platform linux/arm64 --pull=always \
+     docker.io/library/alpine uname -m
+   # must print: aarch64
+
+   sudo podman login docker.io
+   sudo podman manifest rm docker.io/fsistemas/sql2json:0.2.1 2>/dev/null || true
+   sudo podman build --platform linux/amd64,linux/arm64 --pull=always \
+     --build-arg VERSION=0.2.1 \
+     --manifest docker.io/fsistemas/sql2json:0.2.1 .
+   sudo podman manifest push docker.io/fsistemas/sql2json:0.2.1 \
+     docker.io/fsistemas/sql2json:0.2.1
+   # Stable releases only — also publish the moving `latest` tag:
+   sudo podman manifest push docker.io/fsistemas/sql2json:0.2.1 \
+     docker.io/fsistemas/sql2json:latest
+   ```
+
+   **Rootless Podman** (works only when cross-arch emulation works in the
+   rootless user namespace):
+
+   ```bash
+   podman build --platform linux/amd64,linux/arm64 --pull=always \
      --build-arg VERSION=0.2.1 \
      --manifest docker.io/fsistemas/sql2json:0.2.1 .
    podman manifest push docker.io/fsistemas/sql2json:0.2.1 \

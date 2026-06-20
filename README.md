@@ -67,13 +67,18 @@ It bundles drivers for PostgreSQL (`psycopg2-binary`) and MySQL / MariaDB
 both `linux/amd64` and `linux/arm64`.
 
 The examples below use [Podman](https://podman.io/); every command works
-identically with `docker` — just swap the executable name.
+identically with `docker` — just swap the executable name. Docker Hub shows the
+current pull command, tags, and supported platforms:
+<https://hub.docker.com/r/fsistemas/sql2json>.
 
 Quick test without a config file (pulls the image on first run):
 
 ```bash
 podman run --rm docker.io/fsistemas/sql2json --query "SELECT 1 AS a, 2 AS b"
 # → [{"a": 1, "b": 2}]
+
+# Docker equivalent:
+docker run --rm docker.io/fsistemas/sql2json --query "SELECT 1 AS a, 2 AS b"
 ```
 
 ### Supported tags

@@ -33,6 +33,12 @@ uv run --extra dev pytest --cov
 # Run the CLI tool (since 0.2.1; `python -m sql2json ...` is equivalent)
 sql2json --name default --query default
 
+# Run the official Docker Hub image (multi-arch linux/amd64 + linux/arm64)
+podman run --rm docker.io/fsistemas/sql2json --query "SELECT 1 AS a, 2 AS b"
+# Docker equivalent:
+docker run --rm docker.io/fsistemas/sql2json --query "SELECT 1 AS a, 2 AS b"
+# Docker Hub: https://hub.docker.com/r/fsistemas/sql2json
+
 # Build the Docker image (installs sql2json from PyPI; pass VERSION to pin a
 # release, omit it for the latest). `podman build ...` works identically.
 docker build -t sql2json .                      # latest PyPI release
@@ -132,7 +138,7 @@ Query values prefixed with `@` are treated as file paths to `.sql` files.
    ```
    `uv build` produces `dist/sql2json-0.1.12.tar.gz` and the wheel. `uv publish` uploads to PyPI (requires a token configured via `UV_PUBLISH_TOKEN` or `~/.pypirc`).
 
-8. **Publish the Docker image** to `docker.io/fsistemas/sql2json` from your local machine (not CI). The image installs `sql2json==<version>` from PyPI, so this runs **after** step 7. The maintainer uses Podman; `docker buildx` is equivalent. Push the immutable `:X.Y.Z` tag every release and move `:latest` only for stable releases. See `RELEASING.md` for the full Podman/Docker commands and the verify step.
+8. **Publish the Docker image** to `docker.io/fsistemas/sql2json` from your local machine (not CI). The image installs `sql2json==<version>` from PyPI, so this runs **after** step 7. The maintainer uses Podman; for multi-arch on an amd64 machine, the tested local path is rootful Podman (`sudo podman`) with host-level `qemu-user-static`/`binfmt_misc`, because rootless Podman can fail to execute arm64 builds. `docker buildx` is equivalent for contributors using real Docker BuildKit. Push the immutable `:X.Y.Z` tag every release and move `:latest` only for stable releases. See `RELEASING.md` for the full Podman/Docker commands and the verify step.
 
 ### Notes
 
