@@ -15,15 +15,39 @@ metadata:
 
 `sql2json` is a lightweight CLI that runs SQLAlchemy-supported queries and prints JSON, CSV, or Excel output directly to stdout or a file. It works with any project — there is no built-in assumption about which database or schema you are using.
 
-Install once, use from any project:
+Install once as an isolated tool, **with the Postgres and MySQL drivers
+bundled**, and use it from any project:
 
 ```bash
-pip install sql2json
+uv tool install "sql2json[postgres,mysql]"
+# or
+pipx install "sql2json[postgres,mysql]"
+```
+
+These methods work on **externally-managed** systems (Manjaro/Arch, Debian 12+,
+Ubuntu 23.04+, Homebrew Python), where a bare `pip install` is refused with
+`error: externally-managed-environment` ([PEP 668](https://peps.python.org/pep-0668/)),
+and they put `sql2json` on `PATH` without touching project environments.
+
+**Quote the extras** — in bash/zsh the brackets are glob characters, so
+`"sql2json[postgres,mysql]"` must be quoted (PowerShell:
+`'sql2json[postgres,mysql]'`). Bare `sql2json` is **SQLite only**; add
+`[postgres]` and/or `[mysql]` for those databases (other drivers, e.g. `pyodbc`
+for MS SQL, install alongside). For library/project use, add it as a dependency
+instead: `uv add "sql2json[postgres,mysql]"` or, in a venv,
+`pip install "sql2json[postgres,mysql]"`.
+
+**Upgrade** (keep the extras so drivers stay installed):
+
+```bash
+uv tool upgrade sql2json      # or: uv tool install "sql2json[postgres,mysql]" --force
+pipx upgrade sql2json
+pip install --upgrade "sql2json[postgres,mysql]"   # inside a venv
 ```
 
 Examples here use the `sql2json` command, available since **v0.2.1**. On `0.2.0`
 and earlier — or if the command is not on `PATH` — use the equivalent
-`python -m sql2json ...` form instead.
+`python -m sql2json ...` form instead (on Windows, `py -m sql2json ...`).
 
 ## When to Use
 
