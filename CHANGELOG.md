@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - The `Dockerfile` now installs `sql2json` from PyPI (build arg `VERSION` pins a release; omitted installs the latest) instead of copying the working tree, so a tagged image always matches the published release. Its entrypoint is now the `sql2json` console script (was `python -m sql2json`), and it carries OCI image labels.
 - Documented the local (Podman / Docker) image publish + verify step in `RELEASING.md` and CLAUDE.md, run after the PyPI publish. The tested multi-arch local path is rootful Podman (`sudo podman`) with host-level QEMU/binfmt on an amd64 maintainer machine.
+- Reworked install/upgrade instructions across `README.md`, `AGENTS.md`, and `skills/sql2json/SKILL.md` to be cross-platform and environment-aware (Linux, macOS, Windows). The recommended install is now an isolated tool (`uv tool install` / `pipx install`) that bundles the Postgres and MySQL drivers by default (`"sql2json[postgres,mysql]"`), works on PEP 668 externally-managed systems, and documents the extras-quoting gotcha, the SQLite-only minimal variant, adding drivers later, the `--break-system-packages` escape hatch, and how to upgrade while keeping the drivers.
 
 ## [0.2.1] - 2026-06-19
 

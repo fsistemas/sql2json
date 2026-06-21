@@ -19,22 +19,92 @@ sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1"
 
 ## Install
 
+Published on PyPI: <https://pypi.org/project/sql2json/>
+
+`sql2json` is a CLI tool, so the recommended way to install it is as an
+**isolated tool** that lives on your `PATH` without touching any project
+environment. The default command below also bundles the PostgreSQL and MySQL
+drivers so you can connect to those databases immediately:
+
 ```bash
-pip install sql2json
+uv tool install "sql2json[postgres,mysql]"
+# or
+pipx install "sql2json[postgres,mysql]"
 ```
 
-SQLite works out of the box (it ships with Python). For PostgreSQL or MySQL,
-install the matching driver extra:
+Both methods work on modern, **externally-managed** systems (Manjaro/Arch,
+Debian 12+, Ubuntu 23.04+, Homebrew Python on macOS), where a plain
+system-wide `pip install` is refused with `error: externally-managed-environment`
+([PEP 668](https://peps.python.org/pep-0668/)).
+
+> **Quoting gotcha:** in zsh and bash the square brackets are glob characters,
+> so the package spec **must be quoted** — `"sql2json[postgres,mysql]"`.
+> Unquoted, the shell tries to expand `[postgres,mysql]` and errors before the
+> installer ever runs. In PowerShell quoting is also safest:
+> `pipx install 'sql2json[postgres,mysql]'`.
+
+### As a project dependency (library use)
+
+If you import `sql2json` as a Python package, add it to your project or a
+virtualenv instead — keep the extras:
 
 ```bash
-pip install "sql2json[postgres]"   # psycopg2-binary
-pip install "sql2json[mysql]"      # PyMySQL
+uv add "sql2json[postgres,mysql]"
+# or, inside an activated venv:
 pip install "sql2json[postgres,mysql]"
 ```
 
+### Database drivers (extras)
+
+| Extra | Installs | When you need it |
+|---|---|---|
+| _(none)_ | — | SQLite only (built into Python) |
+| `[postgres]` | `psycopg2-binary` | PostgreSQL |
+| `[mysql]` | `PyMySQL` | MySQL / MariaDB |
+| `[postgres,mysql]` | both | the recommended default |
+
+**Minimal (SQLite only):** a bare install ships no third-party DB drivers —
+fine if you only use SQLite, but connecting to Postgres/MySQL without the extras
+fails with `ModuleNotFoundError: psycopg2` / `pymysql`. Install the extras you
+need:
+
+```bash
+uv tool install sql2json        # SQLite only — add [postgres]/[mysql] for those DBs
+pipx install sql2json           # same, minimal
+```
+
+**Adding drivers later** — if you already installed `sql2json` and now need a
+driver, reinstall with the extras (or inject the driver into the isolated tool):
+
+```bash
+uv tool install "sql2json[postgres,mysql]" --force   # reinstall with drivers
+pipx inject sql2json psycopg2-binary pymysql         # add to the pipx install
+```
+
 Other databases work too — install any
-[SQLAlchemy-supported driver](https://docs.sqlalchemy.org/en/20/dialects/) (e.g.
-`pyodbc` for MS SQL Server) alongside `sql2json`.
+[SQLAlchemy-supported driver](https://docs.sqlalchemy.org/en/20/dialects/)
+alongside `sql2json`. For example, MS SQL Server needs `pyodbc`:
+
+```bash
+uv tool install "sql2json" --with pyodbc
+pipx inject sql2json pyodbc
+```
+
+### Per-OS notes
+
+- **Linux:** system Python is externally-managed (PEP 668). `uv tool` and
+  `pipx` install into `~/.local/bin` — make sure it is on your `PATH`
+  (`pipx ensurepath` sets this up).
+- **macOS:** Homebrew Python is externally-managed too, so prefer `uv tool` /
+  `pipx`; they place scripts on your `PATH` the same way.
+- **Windows:** the `sql2json.exe` console script lands in the Python/uv/pipx
+  Scripts directory — ensure it is on `PATH`, or use `py -m sql2json ...`. In
+  PowerShell and cmd, quote the extras: `'sql2json[postgres,mysql]'`.
+
+> **Escape hatch (avoid):** on an externally-managed system you *can* force a
+> system-wide install with `pip install --break-system-packages "sql2json[postgres,mysql]"`,
+> but this writes into the OS-managed Python and can break system tooling.
+> Prefer `uv tool` / `pipx` (isolated) or a venv instead.
 
 ### Running it
 
@@ -47,15 +117,25 @@ sql2json --name default --query default
 The `sql2json` command is available **since v0.2.1**. The original
 `python -m sql2json ...` form still works and is equivalent — use it on `0.2.0`
 and earlier, or whenever the package is installed but its scripts directory is
-not on your `PATH`.
+not on your `PATH` (on Windows, `py -m sql2json ...`).
 
-For a global, isolated install that puts `sql2json` on your `PATH` without
-touching your project environments:
+### Upgrading
+
+Carry the same extras through so the drivers stay installed:
 
 ```bash
-pipx install sql2json
-# or
-uv tool install sql2json
+uv tool upgrade sql2json                              # uv tool install
+uv tool install "sql2json[postgres,mysql]" --force    # reinstall, refresh drivers
+pipx upgrade sql2json                                 # pipx install
+pip install --upgrade "sql2json[postgres,mysql]"      # inside a venv
+```
+
+Verify the installed version:
+
+```bash
+uv tool list                             # shows isolated tool versions
+pipx list                                # shows pipx-managed versions
+python -c "import importlib.metadata as m; print(m.version('sql2json'))"
 ```
 
 ## Docker
