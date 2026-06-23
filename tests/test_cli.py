@@ -110,14 +110,45 @@ class TestListQueries:
         result = run_cli("--list-queries", "--config", cfg)
         assert result.returncode == 0
 
-    def test_stdout_is_json_array(self, tmp_path):
+    def test_stdout_exposes_global_and_connection_scoped_queries(self, tmp_path):
+        cfg = str(tmp_path / "config.json")
+        _write_config(
+            cfg,
+            {
+                "connections": {
+                    "default": "sqlite:///:memory:",
+                    "reporting": "sqlite:///:memory:",
+                },
+                "queries": {
+                    "default": "SELECT 1 AS a, 2 AS b",
+                    "sales": "SELECT 42 AS total",
+                },
+                "connection_queries": {
+                    "default": {"sales": "SELECT 7 AS scoped_sales"},
+                    "reporting": {"pipeline": "SELECT 8 AS pipeline"},
+                },
+            },
+        )
+        result = run_cli("--list-queries", "--config", cfg)
+        discovery = json.loads(result.stdout)
+
+        assert discovery == {
+            "global": ["default", "sales"],
+            "connections": {
+                "default": ["sales"],
+                "reporting": ["pipeline"],
+            },
+        }
+
+    def test_legacy_list_queries_output_remains_available(self, tmp_path):
         cfg = str(tmp_path / "config.json")
         _write_config(cfg, CONFIG)
-        result = run_cli("--list-queries", "--config", cfg)
+
+        result = run_cli("--list-queries", "legacy", "--config", cfg)
+
+        assert result.returncode == 0
         names = json.loads(result.stdout)
-        assert isinstance(names, list)
-        assert "default" in names
-        assert "sales" in names
+        assert names == ["default", "sales"]
 
     def test_stderr_is_empty(self, tmp_path):
         cfg = str(tmp_path / "config.json")

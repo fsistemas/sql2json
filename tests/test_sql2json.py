@@ -130,6 +130,63 @@ def test_run_query_by_name_falls_back_to_global_query(tmp_path):
     assert json_results == [{"global_value": 2}]
 
 
+def test_list_queries_keeps_legacy_global_query_list_by_default(tmp_path):
+    cfg = tmp_path / "config.json"
+    _write_config(
+        cfg,
+        {
+            "connections": {"default": "sqlite:///:memory:"},
+            "queries": {"global": "SELECT 1"},
+            "connection_queries": {"default": {"scoped": "SELECT 2"}},
+        },
+    )
+
+    assert sql2json.list_queries(str(cfg)) == ["global"]
+
+
+def test_list_queries_can_return_scoped_discovery_shape(tmp_path):
+    cfg = tmp_path / "config.json"
+    _write_config(
+        cfg,
+        {
+            "connections": {
+                "default": "sqlite:///:memory:",
+                "reporting": "sqlite:///:memory:",
+            },
+            "queries": {"global": "SELECT 1", "shadowed": "SELECT 'global'"},
+            "connection_queries": {
+                "default": {"shadowed": "SELECT 'scoped'"},
+                "reporting": {"report": "SELECT 2"},
+            },
+        },
+    )
+
+    assert sql2json.list_queries(str(cfg), scoped=True) == {
+        "global": ["global", "shadowed"],
+        "connections": {"default": ["shadowed"], "reporting": ["report"]},
+    }
+
+
+def test_list_queries_can_return_effective_query_names_for_a_connection(tmp_path):
+    cfg = tmp_path / "config.json"
+    _write_config(
+        cfg,
+        {
+            "connections": {"default": "sqlite:///:memory:"},
+            "queries": {"global": "SELECT 1", "shadowed": "SELECT 'global'"},
+            "connection_queries": {
+                "default": {"shadowed": "SELECT 'scoped'", "scoped": "SELECT 2"}
+            },
+        },
+    )
+
+    assert sql2json.list_queries(str(cfg), connection="default") == [
+        "global",
+        "shadowed",
+        "scoped",
+    ]
+
+
 def test_run_query_by_name_scoped_query_takes_precedence_over_global(tmp_path):
     cfg = tmp_path / "config.json"
     _write_config(

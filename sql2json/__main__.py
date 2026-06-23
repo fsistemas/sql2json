@@ -4,6 +4,7 @@ import csv
 import json
 import sys
 from decimal import Decimal
+from typing import Union
 
 import fire
 
@@ -104,7 +105,7 @@ def handle_run_query2json(
     format="json",
     output=None,
     list_connections=False,
-    list_queries=False,
+    list_queries: Union[bool, str] = False,
     timezone=None,
     **kwargs,
 ):
@@ -116,7 +117,14 @@ def handle_run_query2json(
 
         if list_queries:
             config_path = kwargs.get("config")
-            print(json.dumps(_list_queries(config_path)))
+            if isinstance(list_queries, str) and list_queries.lower() in {
+                "legacy",
+                "flat",
+                "names",
+            }:
+                print(json.dumps(_list_queries(config_path)))
+            else:
+                print(json.dumps(_list_queries(config_path, scoped=True)))
             return
 
         result = run_query2json(
