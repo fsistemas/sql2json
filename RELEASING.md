@@ -76,6 +76,12 @@ requesting one rather than bumping the version yourself.
    version has to exist on PyPI first). Both Podman and Docker are shown; either
    works.
 
+   The image is Alpine-based, and the PostgreSQL driver (`psycopg2`) has no musl
+   wheel, so the build compiles it from source. This is handled inside the
+   Dockerfile (the build stage installs the needed toolchain), but it means the
+   `linux/arm64` leg compiles under QEMU emulation and takes noticeably longer
+   than a native build — expect a few extra minutes, not a failure.
+
    First, log in to Docker Hub once (use a Docker Hub
    [access token](https://hub.docker.com/settings/security) as the password,
    not your account password):
@@ -156,7 +162,7 @@ requesting one rather than bumping the version yourself.
 
    > **Cached-arch base-image gotcha.** After a cross-arch / multi-arch build
    > attempt, your local image store can hold a *non-native* base image (e.g. an
-   > `arm64` `python:3.10-slim` pulled during an `--platform linux/arm64`
+   > `arm64` `python:3.13-alpine` pulled during an `--platform linux/arm64`
    > experiment). Podman will silently reuse that cached base for a subsequent
    > plain `podman build`, producing an image that fails to run with
    > `exec /bin/sh: Exec format error` and a build-time warning like
