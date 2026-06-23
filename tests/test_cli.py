@@ -191,6 +191,25 @@ class TestErrorOutput:
         with pytest.raises(Exception):
             run_query2json("default", "SELECT * FROM nonexistent_table", config=cfg)
 
+    def test_malformed_connection_queries_stderr_is_json(self, tmp_path):
+        cfg = str(tmp_path / "config.json")
+        _write_config(
+            cfg,
+            {
+                "connections": {"default": "sqlite:///:memory:"},
+                "connection_queries": {"default": "SELECT 1"},
+                "queries": {},
+            },
+        )
+
+        result = run_cli("--name", "default", "--query", "anything", "--config", cfg)
+
+        assert result.returncode != 0
+        assert result.stdout == ""
+        error = json.loads(result.stderr)
+        assert error["type"] == "ValueError"
+        assert error["error"] == "connection_queries.default must be an object"
+
 
 class TestTimezone:
     def test_utc_exits_zero(self, tmp_path):
