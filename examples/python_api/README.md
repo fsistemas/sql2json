@@ -23,4 +23,6 @@ Public API used here:
 - `list_queries`
 - `parse_parameter`
 
+`list_queries(path)` returns legacy global query names. Use `list_queries(path, scoped=True)` to return the full discovery shape (`{"global": [...], "connections": {...}}`), or `list_queries(path, connection="name")` to get the effective names for one connection, including connection-scoped queries and global fallbacks.
+
 Implementation helpers inside `sql2json.sql2json`, `sql2json.__main__`, or `sql2json.parameter.parameter_parser` are internal and should not be imported by users.
