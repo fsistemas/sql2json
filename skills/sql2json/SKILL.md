@@ -84,7 +84,7 @@ The config file lives at `~/.sql2json/config.json`. Create it with at least one 
 }
 ```
 
-Use `queries` for shared/global named queries. Use `connection_queries` as the canonical schema for connection-specific SQL: connection name -> query name -> SQL. Existing global `queries` configs remain valid and act as fallbacks.
+Use `queries` for shared/global named queries. Use optional `connection_queries` as the canonical schema for connection-specific SQL: connection name -> query name -> SQL. Existing configs that omit `connection_queries` remain valid, and global `queries` act as fallbacks.
 
 Named query resolution is: `connection_queries.<connection>.<query>` first, then `queries.<query>`, then raw SQL or `@/path.sql` handling.
 
@@ -194,7 +194,7 @@ podman run --rm docker.io/fsistemas/sql2json --query "SELECT 1 AS a, 2 AS b"
 docker run --rm docker.io/fsistemas/sql2json --query "SELECT 1 AS a, 2 AS b"
 
 # Pin a production/CI release instead of using latest
-podman pull docker.io/fsistemas/sql2json:0.2.1
+podman pull docker.io/fsistemas/sql2json:0.3.0
 ```
 
 The container runs as the unprivileged `app` user and reads config from
@@ -212,10 +212,10 @@ multi-arch path is rootful Podman with host-level QEMU/binfmt:
 sudo podman run --rm --platform linux/arm64 --pull=always \
   docker.io/library/alpine uname -m   # must print: aarch64
 sudo podman build --platform linux/amd64,linux/arm64 --pull=always \
-  --build-arg VERSION=0.2.1 \
-  --manifest docker.io/fsistemas/sql2json:0.2.1 .
-sudo podman manifest push docker.io/fsistemas/sql2json:0.2.1 \
-  docker.io/fsistemas/sql2json:0.2.1
+  --build-arg VERSION=0.3.0 \
+  --manifest docker.io/fsistemas/sql2json:0.3.0 .
+sudo podman manifest push docker.io/fsistemas/sql2json:0.3.0 \
+  docker.io/fsistemas/sql2json:0.3.0
 ```
 
 ## Sync strategy

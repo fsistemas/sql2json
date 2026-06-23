@@ -52,6 +52,9 @@ sql2json --list-connections
 # → ["default", "mysql", "postgres"]
 
 sql2json --list-queries
+# → {"global": ["default", "sales_monthly", "total_sales"], "connections": {}}
+
+sql2json --list-queries legacy
 # → ["default", "sales_monthly", "total_sales"]
 ```
 
@@ -84,7 +87,9 @@ The functional API is already exported from `__init__.py` and works for both hum
 from sql2json import list_connections, list_queries
 
 list_connections(config_path=None)  # → ["default", "mysql"]
-list_queries(config_path=None)      # → ["default", "sales_monthly"]
+list_queries(config_path=None)      # → ["default", "sales_monthly"]  # global legacy names
+list_queries(config_path=None, scoped=True)
+# → {"global": ["default", "sales_monthly"], "connections": {}}
 ```
 
 These are just the internals of Phase 1.2 exposed as importable functions.

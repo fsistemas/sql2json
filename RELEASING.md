@@ -20,7 +20,7 @@ requesting one rather than bumping the version yourself.
 1. **Bump the version** in `pyproject.toml`:
 
    ```toml
-   version = "0.2.1"
+   version = "0.3.0"
    ```
 
    `sql2json` is pre-1.0 and follows [Semantic Versioning](https://semver.org/)
@@ -30,7 +30,7 @@ requesting one rather than bumping the version yourself.
    `pyproject.toml` is the only place to edit.
 
 2. **Update `CHANGELOG.md`** — move the `[Unreleased]` entries into a new dated
-   `[0.2.1]` section at the top, following
+   `[0.3.0]` section at the top, following
    [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
 3. **Run the full quality gates** (everything CI enforces):
@@ -46,13 +46,13 @@ requesting one rather than bumping the version yourself.
 
    ```bash
    git add pyproject.toml CHANGELOG.md
-   git commit -m "chore: bump version to 0.2.1"
+   git commit -m "chore: bump version to 0.3.0"
    ```
 
 5. **Tag** (always prefix with `v`):
 
    ```bash
-   git tag v0.2.1
+   git tag v0.3.0
    ```
 
 6. **Push the commit and tag together**:
@@ -64,7 +64,7 @@ requesting one rather than bumping the version yourself.
 7. **Build and publish to PyPI**:
 
    ```bash
-   uv build      # produces dist/sql2json-0.2.1.tar.gz and the wheel
+   uv build      # produces dist/sql2json-0.3.0.tar.gz and the wheel
    uv publish    # uploads to PyPI
    ```
 
@@ -115,14 +115,14 @@ requesting one rather than bumping the version yourself.
    # must print: aarch64
 
    sudo podman login docker.io
-   sudo podman manifest rm docker.io/fsistemas/sql2json:0.2.1 2>/dev/null || true
+   sudo podman manifest rm docker.io/fsistemas/sql2json:0.3.0 2>/dev/null || true
    sudo podman build --platform linux/amd64,linux/arm64 --pull=always \
-     --build-arg VERSION=0.2.1 \
-     --manifest docker.io/fsistemas/sql2json:0.2.1 .
-   sudo podman manifest push docker.io/fsistemas/sql2json:0.2.1 \
-     docker.io/fsistemas/sql2json:0.2.1
+     --build-arg VERSION=0.3.0 \
+     --manifest docker.io/fsistemas/sql2json:0.3.0 .
+   sudo podman manifest push docker.io/fsistemas/sql2json:0.3.0 \
+     docker.io/fsistemas/sql2json:0.3.0
    # Stable releases only — also publish the moving `latest` tag:
-   sudo podman manifest push docker.io/fsistemas/sql2json:0.2.1 \
+   sudo podman manifest push docker.io/fsistemas/sql2json:0.3.0 \
      docker.io/fsistemas/sql2json:latest
    ```
 
@@ -131,12 +131,12 @@ requesting one rather than bumping the version yourself.
 
    ```bash
    podman build --platform linux/amd64,linux/arm64 --pull=always \
-     --build-arg VERSION=0.2.1 \
-     --manifest docker.io/fsistemas/sql2json:0.2.1 .
-   podman manifest push docker.io/fsistemas/sql2json:0.2.1 \
-     docker.io/fsistemas/sql2json:0.2.1
+     --build-arg VERSION=0.3.0 \
+     --manifest docker.io/fsistemas/sql2json:0.3.0 .
+   podman manifest push docker.io/fsistemas/sql2json:0.3.0 \
+     docker.io/fsistemas/sql2json:0.3.0
    # Stable releases only — also publish the moving `latest` tag:
-   podman manifest push docker.io/fsistemas/sql2json:0.2.1 \
+   podman manifest push docker.io/fsistemas/sql2json:0.3.0 \
      docker.io/fsistemas/sql2json:latest
    ```
 
@@ -147,10 +147,10 @@ requesting one rather than bumping the version yourself.
    below):
 
    ```bash
-   podman build --platform linux/amd64 --pull=always --build-arg VERSION=0.2.1 \
-     -t docker.io/fsistemas/sql2json:0.2.1 \
+   podman build --platform linux/amd64 --pull=always --build-arg VERSION=0.3.0 \
+     -t docker.io/fsistemas/sql2json:0.3.0 \
      -t docker.io/fsistemas/sql2json:latest .
-   podman push docker.io/fsistemas/sql2json:0.2.1
+   podman push docker.io/fsistemas/sql2json:0.3.0
    podman push docker.io/fsistemas/sql2json:latest   # stable releases only
    ```
 
@@ -170,24 +170,24 @@ requesting one rather than bumping the version yourself.
 
    ```bash
    docker buildx build --platform linux/amd64,linux/arm64 \
-     --build-arg VERSION=0.2.1 \
-     -t docker.io/fsistemas/sql2json:0.2.1 \
+     --build-arg VERSION=0.3.0 \
+     -t docker.io/fsistemas/sql2json:0.3.0 \
      -t docker.io/fsistemas/sql2json:latest \
      --push .
    ```
 
-   **Tagging rules:** push the immutable `:0.2.1` tag every release; move
+   **Tagging rules:** push the immutable `:0.3.0` tag every release; move
    `:latest` **only** for stable releases (never for pre-releases / RCs). Treat
    published version tags as write-once.
 
    **Verify** the pushed image (either tool):
 
    ```bash
-   podman pull docker.io/fsistemas/sql2json:0.2.1
-   podman run --rm docker.io/fsistemas/sql2json:0.2.1 --query "SELECT 1 AS a, 2 AS b"
+   podman pull docker.io/fsistemas/sql2json:0.3.0
+   podman run --rm docker.io/fsistemas/sql2json:0.3.0 --query "SELECT 1 AS a, 2 AS b"
    # → [{"a": 1, "b": 2}]
-   podman run --rm --entrypoint pip docker.io/fsistemas/sql2json:0.2.1 \
-     show sql2json | grep ^Version   # must read: Version: 0.2.1
+   podman run --rm --entrypoint pip docker.io/fsistemas/sql2json:0.3.0 \
+     show sql2json | grep ^Version   # must read: Version: 0.3.0
    ```
 
 ## Notes
@@ -197,4 +197,4 @@ requesting one rather than bumping the version yourself.
 - The build backend is **hatchling** (set in `pyproject.toml`). Do not use
   `python setup.py` or `setuptools` commands.
 - Verify the published release at <https://pypi.org/project/sql2json/> and that
-  `pip install sql2json==0.2.1` resolves the new version.
+  `pip install sql2json==0.3.0` resolves the new version.
