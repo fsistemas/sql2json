@@ -42,7 +42,7 @@ docker run --rm docker.io/fsistemas/sql2json --query "SELECT 1 AS a, 2 AS b"
 # Build the Docker image (installs sql2json from PyPI; pass VERSION to pin a
 # release, omit it for the latest). `podman build ...` works identically.
 docker build -t sql2json .                      # latest PyPI release
-docker build --build-arg VERSION=0.2.1 -t sql2json .
+docker build --build-arg VERSION=0.3.0 -t sql2json .
 # The official image is published at docker.io/fsistemas/sql2json (see RELEASING.md).
 ```
 

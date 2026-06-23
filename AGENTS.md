@@ -107,7 +107,7 @@ If none exist, a read-only in-memory SQLite database is used (useful for testing
 
 ## Config schema for named queries
 
-Use top-level `queries` for shared/global named queries and `connection_queries` for connection-specific SQL. `connection_queries` is the canonical schema for scoped queries: connection name -> query name -> SQL.
+Use top-level `queries` for shared/global named queries and optional `connection_queries` for connection-specific SQL. `connection_queries` is the canonical schema for scoped queries: connection name -> query name -> SQL. Existing configs that omit `connection_queries` continue to work unchanged.
 
 ```json
 {

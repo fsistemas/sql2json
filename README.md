@@ -166,10 +166,10 @@ docker run --rm docker.io/fsistemas/sql2json --query "SELECT 1 AS a, 2 AS b"
 | Tag | Meaning |
 |---|---|
 | `latest` | Newest **stable** release. Moves on every release — convenient, but not pinned. |
-| `X.Y.Z` (e.g. `0.2.1`) | A specific release. **Immutable** — recommended for production and CI. |
+| `X.Y.Z` (e.g. `0.3.0`) | A specific release. **Immutable** — recommended for production and CI. |
 
 ```bash
-podman pull docker.io/fsistemas/sql2json:0.2.1   # pin a release
+podman pull docker.io/fsistemas/sql2json:0.3.0   # pin a release
 podman pull docker.io/fsistemas/sql2json:latest  # newest stable
 ```
 
@@ -236,7 +236,7 @@ local checkout instead — for example to try an unreleased change — pass the
 
 ```bash
 podman build -t sql2json .                       # latest PyPI release
-podman build --build-arg VERSION=0.2.1 -t sql2json .   # pin a release
+podman build --build-arg VERSION=0.3.0 -t sql2json .   # pin a release
 podman run --rm sql2json --query "SELECT 1 AS a, 2 AS b"
 ```
 
@@ -415,7 +415,7 @@ Use `--config /path/to/config.json` to override.
 
 Connection strings follow [SQLAlchemy URL format](https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls). Query values starting with `@` are treated as paths to `.sql` files.
 
-`connection_queries` is the canonical schema for queries that are valid only for a specific connection or SQL dialect. Its shape is a top-level map of connection name to query-name to SQL. `queries` remains valid for shared/global named queries that can run unchanged across connections.
+`connection_queries` is optional and only needed for queries that are valid for a specific connection or SQL dialect. Its shape is a top-level map of connection name to query-name to SQL. Existing configs that omit this key continue to work unchanged; `queries` remains valid for shared/global named queries that can run unchanged across connections.
 
 Named query lookup is connection-aware: `sql2json --name postgres --query now` first checks `connection_queries.postgres.now`; if it is not present, it falls back to `queries.now`; if neither exists, `--query` is treated as raw SQL or an `@/path.sql` file reference.
 

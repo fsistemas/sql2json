@@ -6,10 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-22
+
 ### Added
+- Connection-scoped named queries via top-level `connection_queries`. The canonical shape is `connection_queries.<connection>.<query_name>`, allowing per-connection or per-dialect SQL while keeping existing top-level `queries` as shared/global queries.
+- Agent-friendly scoped query discovery: `--list-queries` now returns `{"global": [...], "connections": {...}}` by default, and `--list-queries legacy` preserves the previous flat global-query list for compatibility.
+- Public Python query discovery helpers: `list_queries(config_path, scoped=True)` returns the scoped discovery object, and `list_queries(config_path, connection="name")` returns effective query names for one connection.
 - Official Docker image published to [`docker.io/fsistemas/sql2json`](https://hub.docker.com/r/fsistemas/sql2json), so the tool can be run with `podman run docker.io/fsistemas/sql2json ...` (or `docker run ...`) without building from source. It is now published as a multi-arch image for `linux/amd64` and `linux/arm64`. Supported tags: `latest` (newest stable) and immutable `X.Y.Z` (pinned). Documented in the README "Docker" section.
 
 ### Changed
+- Named query lookup is now connection-aware: `sql2json --name <connection> --query <query>` checks `connection_queries.<connection>.<query>` first, then falls back to global `queries.<query>`, then preserves existing raw SQL / `@file.sql` behavior.
+- Existing configs that only define top-level `queries` remain backwards-compatible; `queries` is now documented as the shared/global query scope.
 - The `Dockerfile` now installs `sql2json` from PyPI (build arg `VERSION` pins a release; omitted installs the latest) instead of copying the working tree, so a tagged image always matches the published release. Its entrypoint is now the `sql2json` console script (was `python -m sql2json`), and it carries OCI image labels.
 - Documented the local (Podman / Docker) image publish + verify step in `RELEASING.md` and CLAUDE.md, run after the PyPI publish. The tested multi-arch local path is rootful Podman (`sudo podman`) with host-level QEMU/binfmt on an amd64 maintainer machine.
 - Reworked install/upgrade instructions across `README.md`, `AGENTS.md`, and `skills/sql2json/SKILL.md` to be cross-platform and environment-aware (Linux, macOS, Windows). The recommended install is now an isolated tool (`uv tool install` / `pipx install`) that bundles the Postgres and MySQL drivers by default (`"sql2json[postgres,mysql]"`), works on PEP 668 externally-managed systems, and documents the extras-quoting gotcha, the SQLite-only minimal variant, adding drivers later, the `--break-system-packages` escape hatch, and how to upgrade while keeping the drivers.
