@@ -96,11 +96,53 @@ def list_connections(config_path: Optional[str] = None) -> list:
     return list(_get_connections_dict(config).keys())
 
 
-def list_queries(config_path: Optional[str] = None) -> list:
-    """Return the names of all configured queries."""
+def list_queries(
+    config_path: Optional[str] = None,
+    scoped: bool = False,
+    connection: Optional[str] = None,
+) -> Union[list, dict]:
+    """
+    Return configured query names.
+
+    By default this preserves the historical public API and returns only global
+    query names from the top-level ``queries`` object.
+
+    When ``scoped`` is true, return an agent-friendly discovery object that
+    separates top-level global queries from per-connection scoped queries::
+
+        {"global": [...], "connections": {"connection_name": [...]}}
+
+    When ``connection`` is provided, return the effective query names for that
+    connection: global query names plus connection-scoped names, with scoped
+    names appearing only once when they shadow a global query of the same name.
+    """
     path = config_path or _find_config()
     config = load_config_file(path)
-    return list(config.get("queries", {}).keys())
+    global_query_names = list(config.get("queries", {}).keys())
+
+    if not scoped and connection is None:
+        return global_query_names
+
+    connections = _get_connections_dict(config)
+    connection_queries = _get_connection_queries_dict(config, connections)
+
+    if scoped:
+        return {
+            "global": global_query_names,
+            "connections": {
+                connection_name: list(queries.keys())
+                for connection_name, queries in connection_queries.items()
+            },
+        }
+
+    if connection is not None:
+        effective_query_names = list(global_query_names)
+        for query_name in connection_queries.get(connection, {}).keys():
+            if query_name not in effective_query_names:
+                effective_query_names.append(query_name)
+        return effective_query_names
+
+    return global_query_names
 
 
 def _get_connection_queries_dict(config: dict, connections: dict) -> dict:

@@ -250,6 +250,11 @@ class TestHandleRunQuery2Json:
 
     def test_list_queries_branch(self, capsys, tmp_path):
         handle_run_query2json(list_queries=True, config=_write_config(tmp_path))
+        discovery = json.loads(capsys.readouterr().out)
+        assert discovery == {"global": ["default", "sales"], "connections": {}}
+
+    def test_list_queries_legacy_branch(self, capsys, tmp_path):
+        handle_run_query2json(list_queries="legacy", config=_write_config(tmp_path))
         names = json.loads(capsys.readouterr().out)
         assert sorted(names) == ["default", "sales"]
 
