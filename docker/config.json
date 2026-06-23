@@ -7,5 +7,13 @@
         "version": "SELECT version() AS version",
         "sales": "SELECT * FROM sales",
         "sales_by_month": "SELECT month, amount FROM sales WHERE amount >= :min_amount"
+    },
+    "connection_queries": {
+        "pg": {
+            "database_name": "SELECT current_database() AS database_name"
+        },
+        "mysql": {
+            "database_name": "SELECT DATABASE() AS database_name"
+        }
     }
 }

@@ -75,9 +75,18 @@ The config file lives at `~/.sql2json/config.json`. Create it with at least one 
     },
     "queries": {
         "users": "SELECT id, email FROM users LIMIT 10"
+    },
+    "connection_queries": {
+        "mydb": {
+            "table_sizes": "SELECT schemaname, relname, pg_total_relation_size(relid) AS bytes FROM pg_catalog.pg_statio_user_tables"
+        }
     }
 }
 ```
+
+Use `queries` for shared/global named queries. Use `connection_queries` as the canonical schema for connection-specific SQL: connection name -> query name -> SQL. Existing global `queries` configs remain valid and act as fallbacks.
+
+Named query resolution is: `connection_queries.<connection>.<query>` first, then `queries.<query>`, then raw SQL or `@/path.sql` handling.
 
 Supported connection strings follow SQLAlchemy format:
 
@@ -93,7 +102,11 @@ Discover what is configured:
 ```bash
 sql2json --list-connections
 sql2json --list-queries
+# → {"global": ["users"], "connections": {"mydb": ["table_sizes"]}}
+sql2json --list-queries legacy   # old flat global query list
 ```
+
+When an agent receives a data request, discover connections and scoped queries before inventing SQL. Choose a connection, then prefer a query listed under that connection; fall back to a global query only if no scoped query matches.
 
 ## Common query patterns
 
@@ -101,6 +114,13 @@ sql2json --list-queries
 
 ```bash
 sql2json --name mydb --query users
+```
+
+**Connection-scoped named query:**
+
+```bash
+# Resolves to connection_queries.mydb.table_sizes before checking global queries.table_sizes
+sql2json --name mydb --query table_sizes
 ```
 
 **Inline SQL:**
@@ -227,8 +247,9 @@ See `references/agent-sync.md` for the full agent-target map.
 
 1. `sql2json` writes errors to stderr. Check the exit code and stderr, not just stdout.
 2. Named queries come from `~/.sql2json/config.json`; a missing query name is a config problem, not a skill problem.
-3. `Decimal` columns are serialized as floats. `date`/`datetime` columns are not handled natively — cast to `VARCHAR` in SQL or use `--jsonkeys` if the driver returns them as strings.
-4. Keep the canonical file in the repo; do not hand-edit copies in agent-local skill directories.
+3. For named queries, always account for scoped-query precedence: `connection_queries.<connection>.<query>` overrides the same name in global `queries`.
+4. `Decimal` columns are serialized as floats. `date`/`datetime` columns are not handled natively — cast to `VARCHAR` in SQL or use `--jsonkeys` if the driver returns them as strings.
+5. Keep the canonical file in the repo; do not hand-edit copies in agent-local skill directories.
 
 ## Verification checklist
 

@@ -62,9 +62,10 @@ Check the installed version with `uv tool list`, `pipx list`, or
 Map a natural language request to these parameters:
 
 1. **Identify the connection** (`--name`): which database to use.
-2. **Select the query** (`--query`): a named query from `config.json`, raw inline SQL, or a path to a `.sql` file prefixed with `@`.
-3. **Supply parameters**: date variables and SQL bind parameters as extra `--key value` flags.
-4. **Shape the output**: use `--first`, `--key`, `--value`, `--wrapper`, `--jsonkeys` to transform results.
+2. **Select the query** (`--query`): prefer a named query from `config.json`, using connection-scoped queries when available; otherwise use raw inline SQL or a path to a `.sql` file prefixed with `@`.
+3. **Resolve named-query precedence**: for `--name <conn> --query <name>`, sql2json checks `connection_queries.<conn>.<name>` first, then falls back to `queries.<name>`, then treats the value as raw SQL or `@file` when no named query exists.
+4. **Supply parameters**: date variables and SQL bind parameters as extra `--key value` flags.
+5. **Shape the output**: use `--first`, `--key`, `--value`, `--wrapper`, `--jsonkeys` to transform results.
 
 ---
 
@@ -77,12 +78,18 @@ Before calling a query, an agent can inspect what is configured:
 sql2json --list-connections --config /path/to/config.json
 # → ["default", "mysql", "reporting"]
 
-# List available named queries
+# List available named queries, grouped by scope
 sql2json --list-queries --config /path/to/config.json
-# → ["default", "sales_monthly", "total_users"]
+# → {"global": ["default", "sales_monthly"], "connections": {"mysql": ["table_sizes"], "reporting": ["total_users"]}}
+
+# Request the old flat global-query list when integrating with legacy callers
+sql2json --list-queries legacy --config /path/to/config.json
+# → ["default", "sales_monthly"]
 ```
 
-Both flags print a JSON array to stdout and exit 0. If `--config` is omitted the tool uses its normal config lookup order.
+`--list-connections` prints a JSON array to stdout and exits 0. `--list-queries` prints the scoped discovery object by default; `--list-queries legacy` prints the old flat global query array. If `--config` is omitted the tool uses its normal config lookup order.
+
+When selecting a named query for a connection, prefer a query listed under `connections.<connection>`; if none matches, use the matching name from `global`. Runtime lookup follows the same precedence: scoped query first, global query fallback, then raw SQL/`@file` behavior.
 
 ---
 
@@ -95,6 +102,35 @@ When `--config` is not supplied, the tool searches in this order:
 3. `~/.sql2json/config.json` (user home directory)
 
 If none exist, a read-only in-memory SQLite database is used (useful for testing).
+
+---
+
+## Config schema for named queries
+
+Use top-level `queries` for shared/global named queries and `connection_queries` for connection-specific SQL. `connection_queries` is the canonical schema for scoped queries: connection name -> query name -> SQL.
+
+```json
+{
+  "connections": {
+    "postgres": "postgresql+psycopg2://user:pass@host/db",
+    "mysql": "mysql+pymysql://user:pass@host/db"
+  },
+  "queries": {
+    "sales": "SELECT month, amount FROM sales",
+    "long_report": "@/path/to/report.sql"
+  },
+  "connection_queries": {
+    "postgres": {
+      "now": "SELECT CURRENT_TIMESTAMP AS ts"
+    },
+    "mysql": {
+      "now": "SELECT NOW() AS ts"
+    }
+  }
+}
+```
+
+Existing `queries` configs remain valid; they are the fallback/global scope. Query values may be raw SQL or `@/path.sql` file references.
 
 ---
 
@@ -113,7 +149,7 @@ If none exist, a read-only in-memory SQLite database is used (useful for testing
 | `--format` | Output format: `json` (default), `csv`, `excel` | `--format csv` |
 | `--output` | Save to file instead of printing; filename supports `{CURRENT_DATE}` etc. | `--output report_{CURRENT_DATE}` |
 | `--list-connections` | Print JSON array of configured connection names and exit | `--list-connections` |
-| `--list-queries` | Print JSON array of configured query names and exit | `--list-queries` |
+| `--list-queries` | Print configured query names and exit. Default shape is `{"global": [...], "connections": {...}}`; pass `--list-queries legacy` for the old flat global query array | `--list-queries` |
 
 **Note:** Both `--list-connections` and `--list_connections` (underscore) are accepted by fire.
 
@@ -195,8 +231,10 @@ sql2json --name mysql --query sales_monthly --format csv --output sales_{CURRENT
 from sql2json import run_query2json, run_query_by_name, list_connections, list_queries
 
 # Discover what's configured
-connections = list_connections("/path/to/config.json")  # ["default", "mysql"]
-queries = list_queries("/path/to/config.json")          # ["default", "sales_monthly"]
+connections = list_connections("/path/to/config.json")
+queries = list_queries("/path/to/config.json")                         # global legacy names
+scoped_queries = list_queries("/path/to/config.json", scoped=True)      # {"global": [...], "connections": {...}}
+mysql_queries = list_queries("/path/to/config.json", connection="mysql")
 
 # Run a named query — returns list of dicts
 rows = run_query_by_name(

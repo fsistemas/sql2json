@@ -263,10 +263,21 @@ docker compose run --rm sql2json --name pg --query sales_by_month --min_amount 4
 # → [{"month": "January", "amount": 5000.0}, {"month": "March", "amount": 7100.75}]
 ```
 
-Run the same demo queries against MySQL by switching `--name`:
+Run the same shared demo queries against MySQL by switching `--name`:
 
 ```bash
 docker compose run --rm sql2json --name mysql --query sales
+```
+
+The demo config also uses `connection_queries` for dialect-specific named queries. For example, `database_name` is defined separately for PostgreSQL and MySQL, while `version`, `sales`, and `sales_by_month` remain shared/global queries:
+
+```bash
+docker compose run --rm sql2json --list-queries
+# → {"global": ["version", "sales", "sales_by_month"], "connections": {"pg": ["database_name"], "mysql": ["database_name"]}}
+
+# Same query name, scoped SQL for each connection:
+docker compose run --rm sql2json --name pg --query database_name
+docker compose run --rm sql2json --name mysql --query database_name
 ```
 
 Tear down when done:
@@ -338,6 +349,11 @@ cat > ~/.sql2json/config.json << 'EOF'
     },
     "queries": {
         "default": "SELECT 1 AS a, 2 AS b"
+    },
+    "connection_queries": {
+        "default": {
+            "healthcheck": "SELECT 'ok' AS status"
+        }
     }
 }
 EOF
@@ -381,6 +397,16 @@ Use `--config /path/to/config.json` to override.
         "sales_monthly": "SELECT inv.month, SUM(inv.amount) AS sales FROM invoices inv WHERE inv.date >= :date_from",
         "total_sales": "SELECT SUM(inv.amount) AS sales FROM invoices inv WHERE inv.date >= :date_from",
         "long_query": "@/path/to/my_query.sql"
+    },
+    "connection_queries": {
+        "postgres": {
+            "now": "SELECT CURRENT_TIMESTAMP AS ts",
+            "table_sizes": "SELECT schemaname, relname, pg_total_relation_size(relid) AS bytes FROM pg_catalog.pg_statio_user_tables"
+        },
+        "mysql": {
+            "now": "SELECT NOW() AS ts",
+            "table_sizes": "SELECT table_schema, table_name, data_length + index_length AS bytes FROM information_schema.tables WHERE table_schema = DATABASE()"
+        }
     }
 }
 ```
@@ -388,6 +414,10 @@ Use `--config /path/to/config.json` to override.
 > **Note:** Both `"connections"` and `"conections"` (legacy typo) are accepted. Existing config files do not need to be updated.
 
 Connection strings follow [SQLAlchemy URL format](https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls). Query values starting with `@` are treated as paths to `.sql` files.
+
+`connection_queries` is the canonical schema for queries that are valid only for a specific connection or SQL dialect. Its shape is a top-level map of connection name to query-name to SQL. `queries` remains valid for shared/global named queries that can run unchanged across connections.
+
+Named query lookup is connection-aware: `sql2json --name postgres --query now` first checks `connection_queries.postgres.now`; if it is not present, it falls back to `queries.now`; if neither exists, `--query` is treated as raw SQL or an `@/path.sql` file reference.
 
 ## CLI reference
 
@@ -408,7 +438,7 @@ sql2json [options] [--param value ...]
 | `--format` | `json` | Output format: `json`, `csv`, `excel` |
 | `--output` | _(stdout)_ | Save to file; filename supports `{CURRENT_DATE}` etc. |
 | `--list-connections` | — | Print JSON array of configured connection names and exit |
-| `--list-queries` | — | Print JSON array of configured query names and exit |
+| `--list-queries` | — | Print configured query names and exit. Default shape is `{"global": [...], "connections": {...}}`; pass `--list-queries legacy` for the old flat global query list |
 
 Extra `--key value` flags become SQL bind parameters (`:key` in your query).
 
@@ -421,8 +451,13 @@ sql2json --list-connections
 # → ["default", "mysql", "reporting"]
 
 sql2json --list-queries
-# → ["default", "sales_monthly", "total_sales"]
+# → {"global": ["default", "sales_monthly"], "connections": {"mysql": ["table_sizes"]}}
+
+sql2json --list-queries legacy
+# → ["default", "sales_monthly"]
 ```
+
+Use the scoped discovery output to choose an appropriate `--name`/`--query` pair. For a given connection, an entry under `connections.<name>` overrides a same-named global query; otherwise the global query is used as a fallback.
 
 ## Date variables
 
@@ -603,10 +638,14 @@ rows = run_query2json(
 )
 
 connections = list_connections("/path/to/config.json")
-queries = list_queries("/path/to/config.json")
+queries = list_queries("/path/to/config.json")                      # global legacy names
+scoped_queries = list_queries("/path/to/config.json", scoped=True)   # {"global": [...], "connections": {...}}
+mysql_queries = list_queries("/path/to/config.json", connection="mysql")
 ```
 
 Use `run_query2json()` for inline SQL, named queries, SQL files with `@/path.sql`, bind/date parameters, `first`, `key`, `value`, `wrapper`, `jsonkeys`, and `timezone`. Use `run_query_by_name()` when you specifically want the lower-level named connection/query call.
+
+Named query resolution in the Python API matches the CLI: connection-scoped query first, global query fallback, then raw SQL or `@file` handling for `run_query2json()`.
 
 Python API errors are normal Python exceptions. The CLI-only JSON stderr envelope is not used by the Python API.
 
