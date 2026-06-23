@@ -103,6 +103,47 @@ def list_queries(config_path: Optional[str] = None) -> list:
     return list(config.get("queries", {}).keys())
 
 
+def _get_connection_queries_dict(config: dict, connections: dict) -> dict:
+    """Return validated per-connection query mappings from config."""
+    connection_queries = config.get("connection_queries", {})
+
+    if connection_queries is None:
+        return {}
+
+    if not isinstance(connection_queries, dict):
+        raise ValueError("connection_queries must be an object")
+
+    for connection_name, queries in connection_queries.items():
+        if connection_name not in connections:
+            raise ValueError(
+                f"connection_queries references unknown connection '{connection_name}'"
+            )
+
+        if not isinstance(queries, dict):
+            raise ValueError(f"connection_queries.{connection_name} must be an object")
+
+        for query_name, raw_query in queries.items():
+            if not isinstance(raw_query, str):
+                raise ValueError(
+                    f"connection_queries.{connection_name}.{query_name} must be a string"
+                )
+
+    return connection_queries
+
+
+def _resolve_query_string(
+    connection_name: str, query_name: str, connections: dict, config: dict
+) -> str:
+    connection_queries = _get_connection_queries_dict(config, connections)
+    scoped_queries = connection_queries.get(connection_name, {})
+
+    if connection_name in connections and query_name in scoped_queries:
+        return scoped_queries[query_name]
+
+    config_queries = config.get("queries", {})
+    return config_queries.get(query_name, query_name)
+
+
 def run_query_by_name(
     conection_name: str = "default", query_name: str = "default", **kwargs
 ) -> list:
@@ -117,13 +158,13 @@ def run_query_by_name(
     config = load_config_file(config_path)
 
     config_dbs = _get_connections_dict(config)
-    config_queries = config.get("queries", {})
 
     # If conection_name does not exist, try to use as connection string
     conection_string = config_dbs.get(conection_name, conection_name)
 
-    # If query_name does not exist, try to use as inline SQL
-    raw_query_string = config_queries.get(query_name, query_name)
+    raw_query_string = _resolve_query_string(
+        conection_name, query_name, config_dbs, config
+    )
 
     if raw_query_string.startswith("@"):
         raw_query_string = load_query_from_file(raw_query_string[1:])
