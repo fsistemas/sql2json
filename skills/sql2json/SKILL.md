@@ -104,6 +104,7 @@ sql2json --list-connections
 sql2json --list-queries
 # → {"global": ["users"], "connections": {"mydb": ["table_sizes"]}}
 sql2json --list-queries legacy   # old flat global query list
+sql2json --version               # print installed version and exit (also -v)
 ```
 
 When an agent receives a data request, discover connections and scoped queries before inventing SQL. Choose a connection, then prefer a query listed under that connection; fall back to a global query only if no scoped query matches.

@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `--version` / `-v` flag prints the installed version (`sql2json <version>`) and exits 0, instead of trying to run a query named `version`.
+
 ### Changed
 - The Docker image now uses an Alpine base with a multi-stage build, producing a
   smaller image (~99 MB). It continues to run as a non-root user.
