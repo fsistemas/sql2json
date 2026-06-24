@@ -8,6 +8,7 @@ from typing import Union
 
 import fire
 
+from . import __version__
 from .parameter import parse_parameter
 from .sql2json import (
     _current_date,
@@ -160,6 +161,9 @@ def handle_run_query2json(
 
 
 def main():
+    if any(arg in ("--version", "-v") for arg in sys.argv[1:]):
+        print(f"sql2json {__version__}")
+        sys.exit(0)
     fire.Fire(handle_run_query2json)
 
 

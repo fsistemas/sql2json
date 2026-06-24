@@ -150,6 +150,7 @@ Existing `queries` configs remain valid; they are the fallback/global scope. Que
 | `--output` | Save to file instead of printing; filename supports `{CURRENT_DATE}` etc. | `--output report_{CURRENT_DATE}` |
 | `--list-connections` | Print JSON array of configured connection names and exit | `--list-connections` |
 | `--list-queries` | Print configured query names and exit. Default shape is `{"global": [...], "connections": {...}}`; pass `--list-queries legacy` for the old flat global query array | `--list-queries` |
+| `--version` / `-v` | Print the installed version (`sql2json <version>`) and exit | `--version` |
 
 **Note:** Both `--list-connections` and `--list_connections` (underscore) are accepted by fire.
 

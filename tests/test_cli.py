@@ -276,6 +276,48 @@ class TestTimezone:
         assert "error" in error
 
 
+class TestVersion:
+    def test_long_flag_exits_zero(self):
+        result = run_cli("--version")
+        assert result.returncode == 0
+
+    def test_short_flag_exits_zero(self):
+        result = run_cli("-v")
+        assert result.returncode == 0
+
+    def test_long_flag_prints_version(self):
+        from sql2json import __version__
+
+        result = run_cli("--version")
+        assert result.stdout.strip() == f"sql2json {__version__}"
+
+    def test_short_flag_prints_version(self):
+        from sql2json import __version__
+
+        result = run_cli("-v")
+        assert result.stdout.strip() == f"sql2json {__version__}"
+
+    def test_does_not_run_a_query(self):
+        result = run_cli("--version")
+        assert result.stderr == ""
+
+    def test_short_circuits_before_config_is_read(self, tmp_path):
+        from sql2json import __version__
+
+        missing_cfg = str(tmp_path / "does_not_exist.json")
+        result = run_cli("--version", "--config", missing_cfg)
+        assert result.returncode == 0
+        assert result.stdout.strip() == f"sql2json {__version__}"
+        assert result.stderr == ""
+
+    def test_works_alongside_other_flags(self):
+        from sql2json import __version__
+
+        result = run_cli("--name", "default", "--query", "default", "--version")
+        assert result.returncode == 0
+        assert result.stdout.strip() == f"sql2json {__version__}"
+
+
 class TestEntryPoint:
     """The `sql2json` console_scripts entry point (pyproject [project.scripts])."""
 

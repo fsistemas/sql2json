@@ -439,6 +439,7 @@ sql2json [options] [--param value ...]
 | `--output` | _(stdout)_ | Save to file; filename supports `{CURRENT_DATE}` etc. |
 | `--list-connections` | — | Print JSON array of configured connection names and exit |
 | `--list-queries` | — | Print configured query names and exit. Default shape is `{"global": [...], "connections": {...}}`; pass `--list-queries legacy` for the old flat global query list |
+| `--version` / `-v` | — | Print the installed version (`sql2json <version>`) and exit |
 
 Extra `--key value` flags become SQL bind parameters (`:key` in your query).
 
