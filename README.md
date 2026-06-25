@@ -307,26 +307,29 @@ uv run pytest
 
 A separate, opt-in integration suite verifies the documented demo paths (named
 connection lookup, named query lookup, bind parameters, Decimal values, and JSON
-serialization) against the real PostgreSQL and MySQL services. The one command
-below provisions the `docker-compose.yml` services, runs the suite, and tears
-them down:
+serialization) against real PostgreSQL and MySQL. By default it provisions
+ephemeral databases **in code** with
+[testcontainers](https://testcontainers-python.readthedocs.io/), so a bare run
+just works given a running Docker/Podman (no pre-provisioned stack):
+
+```bash
+uv run --extra integration pytest -m integration tests/integration
+```
+
+The integration tests are marked `integration` and deselected by default, so
+`uv run pytest` stays Docker-free. To run them against an already-running
+database instead of starting containers, point at it with `SQL2JSON_TEST_PG_URL`
+/ `SQL2JSON_TEST_MYSQL_URL`. `./scripts/test-integration.sh` uses exactly that to
+provision the `docker-compose.yml` services, run the suite, and tear them down:
 
 ```bash
 ./scripts/test-integration.sh
 ```
 
-The integration tests are marked `integration` and deselected by default, so
-`uv run pytest` stays Docker-free. To run them against already-running services
-(or a different host/port via `SQL2JSON_TEST_PG_URL` / `SQL2JSON_TEST_MYSQL_URL`):
-
-```bash
-docker compose up -d postgres mysql
-uv run --extra integration pytest -m integration tests/integration
-```
-
-Each test **skips cleanly** when its database is unreachable, so a machine
-without Docker never sees failures. In CI, the `integration` job in
-`.github/workflows/ci.yml` provisions the services and runs the same suite.
+Each test **skips cleanly** when no container runtime is available or its
+database is unreachable, so a machine without Docker never sees failures. In CI,
+the `integration` job in `.github/workflows/ci.yml` provisions the services and
+runs the same suite.
 
 ### Quality gates
 
