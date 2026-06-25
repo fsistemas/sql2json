@@ -54,5 +54,10 @@ if ! docker compose up -d --wait "${services[@]}" 2>/dev/null; then
 fi
 
 echo ">> Running integration tests..."
+# Point the suite at the compose services. With these overrides set the
+# integration fixtures reuse the already-seeded compose stack instead of
+# starting their own ephemeral testcontainers (the default when unset).
+export SQL2JSON_TEST_PG_URL="postgresql+psycopg2://demo:demo@127.0.0.1:5432/demo"
+export SQL2JSON_TEST_MYSQL_URL="mysql+pymysql://demo:demo@127.0.0.1:3306/demo"
 # `dev` provides pytest; `integration` provides the psycopg2 / pymysql drivers.
 uv run --extra dev --extra integration pytest -m integration tests/integration "$@"

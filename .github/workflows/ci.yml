@@ -42,8 +42,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
-      # Provisions the docker-compose postgres/mysql services (seeded from
-      # docker/initdb.sql), runs the integration suite against them, and tears
-      # them down. Demo credentials are local/demo-only and safe in a public repo.
+      # The integration fixtures spin up ephemeral PostgreSQL/MySQL containers in
+      # code via testcontainers (seeded from docker/initdb.sql) and tear them
+      # down — no compose provisioning needed; the GitHub runner's Docker daemon
+      # is used directly. `./scripts/test-integration.sh` remains the local path
+      # that reuses a docker-compose stack via the SQL2JSON_TEST_*_URL overrides.
       - name: Run database integration tests
-        run: ./scripts/test-integration.sh
+        run: >-
+          uv run --extra dev --extra integration
+          pytest -m integration tests/integration
