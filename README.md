@@ -9,6 +9,15 @@ sql2json --name mysql --query sales_monthly --date_from "START_CURRENT_MONTH-1"
 # → [{"month": "January", "sales": 5000}, {"month": "February", "sales": 3000}]
 ```
 
+The command commits by default, so writes persist:
+
+```bash
+sql2json --name mysql --query "UPDATE jobs SET done = 1 WHERE id = :id" --id 42
+# → {"rowcount": 1}
+```
+
+Pass `--read-only` to run a statement without persisting anything (safe for exploration and agents).
+
 ## Use cases
 
 - **Scheduled reports**: run a cron job that pulls yesterday's sales and posts the JSON to a dashboard (Geckoboard, Grafana, etc.)
@@ -459,6 +468,60 @@ sql2json --list-queries legacy
 ```
 
 Use the scoped discovery output to choose an appropriate `--name`/`--query` pair. For a given connection, an entry under `connections.<name>` overrides a same-named global query; otherwise the global query is used as a fallback.
+
+## Writing data & read-only mode
+
+There is one command and it **commits by default** (autocommit). It runs any kind
+of SQL — `SELECT`, **DML** (`INSERT` / `UPDATE` / `DELETE`), and **DDL** (`CREATE`
+/ `ALTER` / `DROP`):
+
+| Statement | Result |
+|---|---|
+| `SELECT` / `... RETURNING` | returns rows, shaped by the usual transform flags |
+| INSERT / UPDATE / DELETE / DDL (returns no rows) | persists and prints `{"rowcount": N}` (DDL / count-unknown statements report `{"rowcount": 0}` consistently across databases) |
+
+```bash
+# DDL — create a table (persists)
+sql2json --name mydb --query "CREATE TABLE sessions (id INTEGER, expires_at TEXT)"
+# → {"rowcount": 0}
+
+# DML — delete rows (persists, prints the affected-row count)
+sql2json --name mydb --query "DELETE FROM sessions WHERE expires_at < :cutoff" \
+  --cutoff "CURRENT_DATE-30"
+# → {"rowcount": 12}
+
+# RETURNING streams the new rows back, shaped by the usual flags
+sql2json --name mydb \
+  --query "INSERT INTO users (email) VALUES (:e) RETURNING id, email" --e a@b.com
+# → [{"id": 7, "email": "a@b.com"}]
+```
+
+### `--read-only` (safe mode)
+
+Pass `--read-only` to run a statement **without persisting anything**. The
+statement still executes, but a real database read-only transaction is requested
+where supported — SQLite, PostgreSQL, and MySQL — so a write is rejected by the
+database up front, with an unconditional rollback as a portable backstop for any
+other backend. A write under `--read-only` reports `{"rowcount": ...}` and prints
+a notice to **stderr**, leaving stdout as clean JSON; `SELECT` returns rows as
+usual with no notice.
+
+```bash
+# SELECT under --read-only behaves exactly like a normal read
+sql2json --read-only --name mydb --query "SELECT count(*) AS n FROM users"
+# → [{"n": 1234}]
+
+# A write under --read-only does not persist
+sql2json --read-only --name mydb --query "DELETE FROM users WHERE id = :id" --id 42
+# stdout → {"rowcount": 0}
+# stderr → read-only mode: write not persisted (re-run without --read-only to commit the change).
+```
+
+> **Safety:** because the command commits by default, gate it in locked-down
+> deployments and prefer `--read-only` for agents, automation, and exploration —
+> anywhere that must not mutate data. Note `--read-only` still *runs* the
+> statement (then rolls it back / has it rejected), so it is not a syntactic
+> guard against destructive SQL.
 
 ## Date variables
 

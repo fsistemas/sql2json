@@ -146,6 +146,7 @@ Existing `queries` configs remain valid; they are the fallback/global scope. Que
 | `--value` | Use with `--key` to produce `{key_col: value_col}` dicts | `--value amount` |
 | `--wrapper` | Wrap result in `{"data": [...]}` | `--wrapper` |
 | `--jsonkeys` | Comma-separated columns whose string values should be parsed as JSON | `--jsonkeys payload,metadata` |
+| `--read-only` | Run the statement without persisting anything (DB read-only on SQLite/PostgreSQL/MySQL, rollback backstop elsewhere). Safe for exploration/automation | `--read-only` |
 | `--format` | Output format: `json` (default), `csv`, `excel` | `--format csv` |
 | `--output` | Save to file instead of printing; filename supports `{CURRENT_DATE}` etc. | `--output report_{CURRENT_DATE}` |
 | `--list-connections` | Print JSON array of configured connection names and exit | `--list-connections` |
@@ -153,6 +154,53 @@ Existing `queries` configs remain valid; they are the fallback/global scope. Que
 | `--version` / `-v` | Print the installed version (`sql2json <version>`) and exit | `--version` |
 
 **Note:** Both `--list-connections` and `--list_connections` (underscore) are accepted by fire.
+
+---
+
+## Writing data & `--read-only`
+
+The command **commits by default** (autocommit). It runs any SQL — `SELECT`,
+**DML** (`INSERT` / `UPDATE` / `DELETE` / `MERGE` / `UPSERT`), and **DDL**
+(`CREATE` / `ALTER` / `DROP` / `TRUNCATE`). Writes persist:
+
+```bash
+# SELECT returns rows
+sql2json --name mydb --query "SELECT * FROM users"
+
+# A write commits and reports the affected-row count
+sql2json --name mydb --query "UPDATE users SET active = 1 WHERE id = :id" --id 7
+# → {"rowcount": 1}
+```
+
+| Statement | Output |
+|---|---|
+| SELECT / `... RETURNING` | returns rows, shaped by the transform flags |
+| INSERT / UPDATE / DELETE / DDL (no rows) | persists, prints `{"rowcount": N}` (DDL / count-unknown statements report `{"rowcount": 0}` consistently across databases) |
+
+### `--read-only` (safe mode)
+
+Add `--read-only` to run a statement **without persisting anything**. A real
+database read-only transaction is requested where supported (SQLite, PostgreSQL,
+MySQL) so a write is rejected up front, with an unconditional rollback as the
+portable backstop. A write under `--read-only` reports `{"rowcount": ...}` and
+prints a notice to **stderr** instead of persisting; `SELECT` returns rows
+normally with no notice.
+
+```bash
+# Safe read
+sql2json --read-only --name mydb --query "SELECT * FROM users"
+
+# A write is not persisted under --read-only
+sql2json --read-only --name mydb --query "DELETE FROM users WHERE id = :id" --id 7
+# stdout → {"rowcount": 0}
+# stderr → read-only mode: write not persisted (re-run without --read-only to commit the change).
+```
+
+**Agent guidance:** because the command commits by default, prefer `--read-only`
+for exploration, schema discovery, automation, or any context that must not
+mutate data. Drop the flag only when you intend to persist a write. Note
+`--read-only` still *runs* the statement (then rolls it back / has it rejected),
+so it is not a syntactic guard against destructive SQL.
 
 ---
 
@@ -229,7 +277,12 @@ sql2json --name mysql --query sales_monthly --format csv --output sales_{CURRENT
 ## Python API
 
 ```python
-from sql2json import run_query2json, run_query_by_name, list_connections, list_queries
+from sql2json import (
+    run_query2json,
+    run_query_by_name,
+    list_connections,
+    list_queries,
+)
 
 # Discover what's configured
 connections = list_connections("/path/to/config.json")
@@ -256,9 +309,29 @@ result = run_query2json(
 )
 
 # Python API raises exceptions normally — no error envelope
+
+# Writes commit by default. Non-row statements return {"rowcount": N};
+# SELECT / RETURNING return rows.
+written = run_query2json(
+    name="mysql",
+    query="UPDATE users SET active = 1 WHERE id = :id",
+    id=7,
+    config="/path/to/config.json",
+)
+# → {"rowcount": 1}
+
+# Run a statement without persisting anything (safe mode).
+preview = run_query2json(
+    name="mysql",
+    query="DELETE FROM users WHERE id = :id",
+    id=7,
+    read_only=True,
+    config="/path/to/config.json",
+)
+# nothing persisted; a notice is printed to stderr for a write
 ```
 
-`config` is a special kwarg handled by the library; it is not forwarded to SQLAlchemy as a bind parameter.
+`config` is a special kwarg handled by the library; it is not forwarded to SQLAlchemy as a bind parameter. `run_query_by_name(..., read_only=True)` is the low-level primitive that rolls back instead of committing.
 
 ---
 
@@ -266,4 +339,4 @@ result = run_query2json(
 
 - Validate and scope any SQL before passing it to `--query`. The tool executes whatever SQL it receives.
 - Use named queries from `config.json` when possible to limit the SQL surface.
-- The tool does not enforce read-only access — that is the caller's responsibility.
+- The tool **commits writes by default** (autocommit), so any write it runs persists. For locked-down or agent contexts that must not mutate data, use `--read-only` (or `read_only=True`) — the statement runs but nothing persists. Note `--read-only` still *runs* the statement (rolled back / rejected by the DB), so do not treat it as a syntactic guard against destructive SQL.

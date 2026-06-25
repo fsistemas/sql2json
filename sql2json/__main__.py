@@ -95,6 +95,24 @@ def save_csv(rows, file_name, dialect, key, timezone=None):
             writer.writerow(data)
 
 
+def emit_result(result, format, output, key, value, first, timezone):
+    """Serialize a result to a file (--output) or stdout, honoring --format."""
+    if output:
+        if "csv" == format:
+            save_csv(result, output, "csv", key, timezone=timezone)
+        elif "excel" == format:
+            save_csv(result, output, "excel", key, timezone=timezone)
+        else:
+            save_json(result, output, timezone=timezone)
+    else:
+        if key and value and first:
+            print(json_dumps(result))
+        elif key and first:
+            print(result)
+        else:
+            print(json_dumps(result))
+
+
 def handle_run_query2json(
     name="default",
     query="default",
@@ -108,6 +126,7 @@ def handle_run_query2json(
     list_connections=False,
     list_queries: Union[bool, str] = False,
     timezone=None,
+    read_only=False,
     **kwargs,
 ):
     try:
@@ -137,23 +156,11 @@ def handle_run_query2json(
             value,
             jsonkeys,
             timezone=timezone,
+            read_only=read_only,
             **kwargs,
         )
 
-        if output:
-            if "csv" == format:
-                save_csv(result, output, "csv", key, timezone=timezone)
-            elif "excel" == format:
-                save_csv(result, output, "excel", key, timezone=timezone)
-            else:
-                save_json(result, output, timezone=timezone)
-        else:
-            if key and value and first:
-                print(json_dumps(result))
-            elif key and first:
-                print(result)
-            else:
-                print(json_dumps(result))
+        emit_result(result, format, output, key, value, first, timezone)
 
     except Exception as e:
         print(json.dumps({"error": str(e), "type": type(e).__name__}), file=sys.stderr)

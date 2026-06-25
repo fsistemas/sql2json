@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `--read-only` flag (default off) for an opt-in safe mode: the statement still runs but nothing is persisted. A real database read-only transaction is requested where supported — SQLite (`PRAGMA query_only`), PostgreSQL/MySQL (`SET TRANSACTION READ ONLY`) — so a write is rejected by the database up front, with an unconditional rollback as the portable backstop for any other backend. A write under `--read-only` reports `{"rowcount": ...}` and prints a notice to stderr (`read-only mode: write not persisted ...`) instead of persisting; SELECT returns rows normally. Recommended for agents, automation, and exploration. Also available from Python as `run_query2json(..., read_only=True)`.
 - `--version` / `-v` flag prints the installed version (`sql2json <version>`) and exits 0, instead of trying to run a query named `version`.
 
 ### Changed
+- The default command now commits writes by default (autocommit). INSERT / UPDATE / DELETE / DDL persist and return `{"rowcount": N}` instead of raising `ResourceClosedError`; SELECT / `... RETURNING` return rows shaped by the transform flags. The reported rowcount is clamped to `0` (`max(rowcount, 0)`) so a DDL / "count unknown" statement — which drivers report as `-1` on SQLite/PostgreSQL but `0` on MySQL — yields a consistent `{"rowcount": 0}` across databases. The separate `execute` subcommand and `run_execute2json` helper have been removed — use the default command to write and `--read-only` to avoid persisting.
 - The Docker image now uses an Alpine base with a multi-stage build, producing a
   smaller image (~99 MB). It continues to run as a non-root user.
 

@@ -50,14 +50,22 @@ docker build --build-arg VERSION=0.3.0 -t sql2json .
 
 `sql2json` is a CLI tool that runs SQL queries via SQLAlchemy and outputs JSON, CSV, or Excel. Since 0.2.1 it is invoked as the `sql2json` console command (declared in `[project.scripts]`, target `sql2json.__main__:main`); the equivalent `python -m sql2json` form still works. Both dispatch through `fire`.
 
+### One command: autocommit by default, `--read-only` for safe mode
+
+There is a single command (no subcommands). It runs any SQL and **commits by default** (autocommit). It branches on `result.returns_rows`: row-returning statements (SELECT, `... RETURNING`) return rows through the transform pipeline; non-row statements (INSERT/UPDATE/DELETE/DDL) persist and return `{"rowcount": N}`. The rowcount is clamped to `0` (`max(rowcount, 0)`) so a DDL / "count unknown" statement — which drivers report as `-1` on SQLite/PostgreSQL but `0` on MySQL — yields a consistent `{"rowcount": 0}` across databases; real DML counts are `>= 1` and pass through.
+
+`--read-only` (default false) is an opt-in safe mode: the statement still runs but nothing is persisted. Enforcement is hybrid — a real DB read-only transaction is requested where supported (SQLite `PRAGMA query_only = ON`; PostgreSQL/MySQL `SET TRANSACTION READ ONLY`) so a write is rejected up front (reported as `{"rowcount": 0}`, not an error), with an unconditional `con.rollback()` as the portable backstop. A write under `--read-only` prints a notice to stderr and is not persisted; SELECT returns rows normally. `--read-only`/`--read_only` accepts a bare flag or truthy strings (`true/t/yes/y/1/on`) via `_coerce_bool`.
+
+`main()` parses bare flags through `fire`; the only special-cased token is `--version`/`-v`, which prints the version and exits before any query runs.
+
 ### Data flow
 
 ```
 CLI args (fire) → handle_run_query2json() [__main__.py]
-  → run_query2json() [sql2json.py]       # applies result transformations (first/key/value/wrapper/jsonkeys)
-    → run_query_by_name()                # resolves config, loads query by name or from .sql file
-      → run_query()                      # executes via SQLAlchemy, kwargs become SQL :params
-        → parse_parameter() per kwarg   # translates date variable strings to real dates
+  → run_query2json(..., read_only=<bool>) [sql2json.py]   # apply transforms; warn on a read-only write
+    → run_query_by_name(..., read_only=<bool>)            # resolves config, loads query by name or from .sql file
+      → run_query(..., read_only=<bool>)                  # executes via SQLAlchemy; commits (or rolls back when read_only); returns rows or {"rowcount": N}
+        → parse_parameter() per kwarg                      # translates date variable strings to real dates
 ```
 
 Extra `**kwargs` passed on the CLI (e.g. `--date_from CURRENT_DATE-1`) flow through as both SQL bind parameters (`:date_from` in the query) and are resolved by `parse_parameter` before execution.
@@ -89,6 +97,7 @@ Query values prefixed with `@` are treated as file paths to `.sql` files.
 | `--value` | Used with `--key` to produce `{key_col: value_col}` dicts |
 | `--wrapper` | Wrap the result. `True`/bare flag wraps under `{"data": [...]}`; a non-empty string wraps under that key (`--wrapper items` → `{"items": [...]}`); `False`/`""` returns it unwrapped |
 | `--jsonkeys` | Comma-separated column names whose string values should be parsed as JSON |
+| `--read-only` | Opt-in safe mode: the statement runs but nothing persists (DB read-only on SQLite/PostgreSQL/MySQL, rollback backstop elsewhere). A write prints a stderr notice and returns `{"rowcount": ...}` without persisting; SELECT returns rows normally |
 | `--format` | `json` (default), `csv`, or `excel` |
 | `--output` | Save to file instead of printing; filename supports `{CURRENT_DATE}` etc. |
 | `--timezone` | IANA timezone name for resolving date variables (e.g. `UTC`, `America/New_York`). Defaults to local system timezone. |
