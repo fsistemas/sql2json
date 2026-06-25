@@ -318,6 +318,58 @@ class TestVersion:
         assert result.stdout.strip() == f"sql2json {__version__}"
 
 
+class TestWriteAndReadOnly:
+    """The default command commits writes; `--read-only` is opt-in safe mode."""
+
+    def _file_db_config(self, tmp_path):
+        db = tmp_path / "test.db"
+        cfg = str(tmp_path / "config.json")
+        _write_config(
+            cfg,
+            {"connections": {"default": f"sqlite:///{db}"}, "queries": {}},
+        )
+        return cfg
+
+    def test_default_insert_persists_across_invocations(self, tmp_path):
+        cfg = self._file_db_config(tmp_path)
+        r1 = run_cli("--query", "CREATE TABLE t (id INTEGER)", "--config", cfg)
+        r2 = run_cli("--query", "INSERT INTO t VALUES (1)", "--config", cfg)
+        r3 = run_cli("--query", "SELECT COUNT(*) AS n FROM t", "--config", cfg)
+        assert r1.returncode == 0
+        assert r2.returncode == 0
+        assert r3.returncode == 0
+        assert json.loads(r3.stdout) == [{"n": 1}]
+
+    def test_read_only_insert_does_not_persist(self, tmp_path):
+        cfg = self._file_db_config(tmp_path)
+        run_cli("--query", "CREATE TABLE t (id INTEGER)", "--config", cfg)
+        ro = run_cli(
+            "--read-only", "--query", "INSERT INTO t VALUES (1)", "--config", cfg
+        )
+        assert ro.returncode == 0
+        # stdout is still valid JSON (a rowcount dict)
+        json.loads(ro.stdout)
+        assert "read-only mode: write not persisted" in ro.stderr
+
+        result = run_cli("--query", "SELECT COUNT(*) AS n FROM t", "--config", cfg)
+        assert json.loads(result.stdout) == [{"n": 0}]
+
+    def test_read_only_select_returns_rows(self, tmp_path):
+        cfg = str(tmp_path / "config.json")
+        _write_config(cfg, CONFIG)
+        result = run_cli("--read-only", "--query", "SELECT 7 AS v", "--config", cfg)
+        assert result.returncode == 0
+        assert json.loads(result.stdout) == [{"v": 7}]
+
+    def test_bad_sql_exits_nonzero_with_json_error(self, tmp_path):
+        cfg = self._file_db_config(tmp_path)
+        result = run_cli("--query", "INSERT INTO nope VALUES (1)", "--config", cfg)
+        assert result.returncode != 0
+        assert result.stdout == ""
+        error = json.loads(result.stderr)
+        assert "error" in error and "type" in error
+
+
 class TestEntryPoint:
     """The `sql2json` console_scripts entry point (pyproject [project.scripts])."""
 

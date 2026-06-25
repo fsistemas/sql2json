@@ -1,6 +1,6 @@
 ---
 name: sql2json
-description: Use when you need to query a SQL database from the terminal with sql2json, especially for live repo DB checks, named queries from ~/.sql2json/config.json, or quick JSON/CSV output from SQLAlchemy-backed connections.
+description: Use when you need to run SQL from the terminal with sql2json — query (SELECT) or write (INSERT/UPDATE/DELETE/DDL, committed by default; use --read-only for safe reads), especially for live repo DB checks, named queries from ~/.sql2json/config.json, or quick JSON/CSV output from SQLAlchemy-backed connections.
 version: 1.0.0
 author: Francisco + Hermes Agent
 license: MIT
@@ -57,10 +57,18 @@ Use this skill when you need to:
 - Execute a one-off SQL statement and get JSON back quickly
 - Pipe database results into `jq`, scripts, or other CLI tools
 - Export query results as CSV or Excel
+- Write to the database (INSERT / UPDATE / DELETE / DDL) — the command commits by default
+
+> **Writes commit by default; use `--read-only` for safe reads.** The command
+> runs any SQL and **commits by default** (autocommit): `SELECT` returns rows,
+> while `INSERT` / `UPDATE` / `DELETE` / DDL persist and return `{"rowcount": N}`.
+> When you only want to read (or must not mutate anything), add `--read-only` —
+> the statement still runs but nothing persists, and a write prints a stderr
+> notice instead of committing. See
+> [Writing data & read-only mode](#writing-data--read-only-mode).
 
 Don't use this skill when:
 
-- You need to mutate data without a clear query
 - You already have a dedicated app-level API that exposes the answer
 - The target database is not reachable
 
@@ -179,6 +187,57 @@ sql2json --name mydb --query users --wrapper items     # → {"items": [...]}
 ```
 
 `--wrapper` (bare) wraps under `"data"`; pass a name (`--wrapper items`) to wrap under that key instead. Omit it for a bare array.
+
+## Writing data & read-only mode
+
+The command **commits by default** (autocommit). It runs any SQL — `SELECT`,
+**DML** (`INSERT`/`UPDATE`/`DELETE`), and **DDL** (`CREATE`/`ALTER`/`DROP`):
+
+- **No-row statements** (INSERT/UPDATE/DELETE/DDL) persist and return `{"rowcount": N}` (DDL / count-unknown statements report `{"rowcount": 0}` consistently across databases).
+- **Row-returning statements** (SELECT, `... RETURNING`) return rows shaped by the transform flags (`--first`, `--key`, `--value`, `--wrapper`, `--jsonkeys`, `--format`, `--output`).
+
+```bash
+# DDL — create a table (persists)
+sql2json --name mydb --query "CREATE TABLE audit (id INTEGER, msg TEXT)"
+# → {"rowcount": 0}
+
+# DML — INSERT / UPDATE / DELETE, persists, prints affected-row count
+sql2json --name mydb --query "INSERT INTO audit (msg) VALUES (:msg)" --msg "hello"
+# → {"rowcount": 1}
+
+# Parameters and date variables work the same way
+sql2json --name mydb \
+  --query "UPDATE jobs SET ran_at = :ts WHERE id = :id" \
+  --ts "CURRENT_DATE|%Y-%m-%d 00:00:00" --id 42
+# → {"rowcount": 1}
+
+# INSERT ... RETURNING streams the new rows back (driver permitting)
+sql2json --name mydb \
+  --query "INSERT INTO users (email) VALUES (:e) RETURNING id, email" --e a@b.com
+# → [{"id": 7, "email": "a@b.com"}]
+```
+
+### `--read-only` (safe mode)
+
+Add `--read-only` to run a statement **without persisting anything**. A real
+database read-only transaction is requested where supported (SQLite, PostgreSQL,
+MySQL) so a write is rejected up front, with an unconditional rollback as the
+portable backstop. A write under `--read-only` returns `{"rowcount": ...}` and
+prints a notice to **stderr**; `SELECT` returns rows normally with no notice.
+Prefer it for exploration, automation, or any context that must not mutate data.
+
+```bash
+# Safe read
+sql2json --read-only --name mydb --query "SELECT count(*) AS n FROM users"
+# → [{"n": 1234}]
+
+# A write is not persisted under --read-only
+sql2json --read-only --name mydb --query "DELETE FROM users WHERE id = :id" --id 7
+# stdout → {"rowcount": 0}
+# stderr → read-only mode: write not persisted (re-run without --read-only to commit the change).
+```
+
+Named queries and `@file.sql` resolve the same way regardless of `--read-only`.
 
 ## Docker
 

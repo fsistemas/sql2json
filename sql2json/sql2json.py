@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import sys
 from typing import Optional, Union
 from zoneinfo import ZoneInfo
 
@@ -21,13 +22,108 @@ def map_result_proxy2list_dict(result_proxy) -> list:
     return [dict(zip(keys, row)) for row in result_proxy]
 
 
-def run_query(engine, raw_query: str, timezone: Optional[str] = None, **kwargs) -> list:
+_TRUTHY_STRINGS = {"true", "t", "yes", "y", "1", "on"}
+
+
+def _coerce_bool(value) -> bool:
+    """
+    Coerce a CLI/string value to a bool.
+
+    fire passes a bare flag (``--read-only``) as ``True`` but a value form
+    (``--read-only yes``) through as the string ``"yes"``; this normalizes both,
+    accepting ``true``/``t``/``yes``/``y``/``1``/``on`` (case-insensitive) as true.
+    """
+    if isinstance(value, str):
+        return value.strip().lower() in _TRUTHY_STRINGS
+    return bool(value)
+
+
+def _begin_read_only(con) -> None:
+    """
+    Best-effort: put the live connection into a real read-only transaction where
+    the backend supports it, so a write is rejected by the database *before* it
+    runs (no triggers, no side effects). Verified on SQLite and PostgreSQL;
+    other backends are caught by the unconditional rollback in run_query, which
+    is the portable backstop, so any failure here is intentionally swallowed.
+    """
+    dialect = con.engine.dialect.name
+    try:
+        if dialect == "sqlite":
+            con.exec_driver_sql("PRAGMA query_only = ON")
+        elif dialect in ("postgresql", "mysql", "mariadb"):
+            con.exec_driver_sql("SET TRANSACTION READ ONLY")
+    except Exception:
+        pass
+
+
+def _is_read_only_violation(exc: Exception) -> bool:
+    """True when a database error is a read-only / write-blocked rejection."""
+    message = str(getattr(exc, "orig", exc)).lower()
+    return "readonly" in message or "read only" in message or "read-only" in message
+
+
+def run_query(
+    engine,
+    raw_query: str,
+    timezone: Optional[str] = None,
+    read_only: bool = False,
+    **kwargs,
+) -> Union[list, dict]:
+    """
+    Execute a single SQL statement and return its result.
+
+    Row-returning statements (SELECT, ``... RETURNING``) yield a list of dicts.
+    Statements that return no rows (INSERT / UPDATE / DELETE without RETURNING,
+    DDL) yield ``{"rowcount": N}`` instead of raising. ``returns_rows`` is used
+    to tell the two apart — more robust than sniffing the SQL string.
+
+    Writes are committed by default (autocommit). When ``read_only`` is true the
+    statement runs without persisting: a real read-only transaction is requested
+    where the backend supports it (SQLite/PostgreSQL/MySQL) so a write is
+    rejected up front, and the transaction is *always* rolled back as a portable
+    backstop. A rejected write is reported as ``{"rowcount": 0}`` rather than
+    raising, so read-only mode never hard-fails on a write.
+    """
+    read_only = _coerce_bool(read_only)
     current_date = _current_date(timezone)
     parameters = {k: parse_parameter(v, current_date) for k, v in kwargs.items()}
 
     with engine.connect() as con:
-        result_proxy = con.execute(text(raw_query), parameters)
-        records = map_result_proxy2list_dict(result_proxy)
+        if read_only:
+            _begin_read_only(con)
+
+        try:
+            result_proxy = con.execute(text(raw_query), parameters)
+
+            if result_proxy.returns_rows:
+                records: Union[list, dict] = map_result_proxy2list_dict(result_proxy)
+            else:
+                # Clamp to 0 for a consistent contract across drivers: a DDL /
+                # "count unknown" statement reports -1 on SQLite/PostgreSQL but 0
+                # on MySQL, so normalize any non-positive value to 0. Real DML
+                # affected-row counts are >= 1 and pass through unchanged.
+                records = {"rowcount": max(result_proxy.rowcount, 0)}
+        except Exception as exc:
+            # Real read-only guard: the database rejected the write. Surface the
+            # same soft "nothing persisted" result as the rollback fallback
+            # instead of a hard error.
+            if read_only and _is_read_only_violation(exc):
+                con.rollback()
+                return {"rowcount": 0}
+            raise
+        finally:
+            # PRAGMA query_only is connection-scoped; clear it so a pooled
+            # SQLite connection is not left read-only for later reuse.
+            if read_only and con.engine.dialect.name == "sqlite":
+                try:
+                    con.exec_driver_sql("PRAGMA query_only = OFF")
+                except Exception:
+                    pass
+
+        if read_only:
+            con.rollback()
+        else:
+            con.commit()
 
     return records
 
@@ -188,14 +284,18 @@ def _resolve_query_string(
 
 def run_query_by_name(
     conection_name: str = "default", query_name: str = "default", **kwargs
-) -> list:
+) -> Union[list, dict]:
     """
     Run a SQL query given a conection_name, query_name.
-    Returns a list of dicts.
+
+    Returns a list of dicts for row-returning statements, or ``{"rowcount": N}``
+    for statements that return no rows. Writes commit by default; pass
+    ``read_only=True`` to roll back instead (the statement still runs).
     """
-    # Pop config and timezone before passing kwargs to SQLAlchemy so they aren't treated as bind params
+    # Pop config, timezone and read_only before passing kwargs to SQLAlchemy so they aren't treated as bind params
     config_path = kwargs.pop("config", None) or _find_config()
     timezone = kwargs.pop("timezone", None)
+    read_only = kwargs.pop("read_only", False)
 
     config = load_config_file(config_path)
 
@@ -213,7 +313,9 @@ def run_query_by_name(
 
     engine = create_engine(conection_string)
 
-    return run_query(engine, raw_query_string, timezone=timezone, **kwargs)
+    return run_query(
+        engine, raw_query_string, timezone=timezone, read_only=read_only, **kwargs
+    )
 
 
 def parse_json_columns(result: dict, jsonkeys: str = "") -> dict:
@@ -242,33 +344,35 @@ def parse_json_columns(result: dict, jsonkeys: str = "") -> dict:
     return response
 
 
-def run_query2json(
-    name: str = "default",
-    query: str = "default",
+def apply_wrapper(
+    result: Union[str, dict, list], wrapper: Union[bool, str] = False
+) -> Union[str, dict, list]:
+    """
+    Wrap a result under a top-level key.
+
+    A non-empty string wraps under that key (e.g. "items" -> {"items": ...});
+    True wraps under "data" ({"data": ...}); False or "" returns it unwrapped.
+    """
+    if isinstance(wrapper, str) and wrapper:
+        return {wrapper: result}
+    elif wrapper:
+        return {"data": result}
+    return result
+
+
+def apply_output_transforms(
+    unparsed_results: list,
     wrapper: Union[bool, str] = False,
     first: bool = False,
     key: str = "",
     value: str = "",
     jsonkeys: str = "",
-    timezone: Optional[str] = None,
-    **kwargs,
 ) -> Union[str, dict, list]:
     """
-    Run a SQL query and return results with optional transformations.
-
-    name: Connection name in config file or a SQLAlchemy connection string.
-    query: Query name in config file, raw SQL, or @/path/to/file.sql.
-    wrapper: Wrap result list. True wraps under "data" ({"data": [...]}); a
-        non-empty string wraps under that key (e.g. "items" -> {"items": [...]});
-        False or "" returns the result unwrapped.
-    first: Return only the first row.
-    key: Column name to use as key (with value) or extract as scalar (with first).
-    value: Column name to use as value (used with key).
-    jsonkeys: Comma-separated columns whose string values should be parsed as JSON.
-    timezone: IANA timezone name used to resolve CURRENT_DATE and related variables (e.g. "America/New_York"). Defaults to local system timezone.
+    Apply the row-shaping (first/key/value/jsonkeys) and wrapper transforms to a
+    list of row dicts. Shared by both the read (``query``) and write (``execute``)
+    code paths so row-returning output is identical across commands.
     """
-    unparsed_results = run_query_by_name(name, query, timezone=timezone, **kwargs)
-
     results = [parse_json_columns(result, jsonkeys) for result in unparsed_results]
 
     result: Union[str, dict, list, None] = None
@@ -298,9 +402,66 @@ def run_query2json(
                 item.get(key) if key and key in item else item for item in results
             ]
 
-    if isinstance(wrapper, str) and wrapper:
-        return {wrapper: result}
-    elif wrapper:
-        return {"data": result}
-    else:
-        return result
+    return apply_wrapper(result, wrapper)
+
+
+def _warn_read_only_write(result: dict) -> None:
+    """
+    Print a friendly notice (on stderr, so stdout stays clean JSON) when a write
+    statement is run under ``--read-only``. The write is never persisted — it is
+    rejected by the database where supported, and always rolled back as a
+    backstop — so this replaces the old hard failure with a clear explanation.
+    """
+    print(
+        "read-only mode: write not persisted "
+        "(re-run without --read-only to commit the change).",
+        file=sys.stderr,
+    )
+
+
+def run_query2json(
+    name: str = "default",
+    query: str = "default",
+    wrapper: Union[bool, str] = False,
+    first: bool = False,
+    key: str = "",
+    value: str = "",
+    jsonkeys: str = "",
+    timezone: Optional[str] = None,
+    read_only: bool = False,
+    **kwargs,
+) -> Union[str, dict, list]:
+    """
+    Run a SQL statement and return results with optional transformations.
+
+    Writes commit by default (autocommit): an INSERT / UPDATE / DELETE / DDL
+    statement persists and returns ``{"rowcount": N}``, while SELECT /
+    ``... RETURNING`` return rows shaped by the transform flags. Pass
+    ``read_only=True`` to roll the statement back instead — it still executes but
+    nothing is persisted, and a notice is printed to stderr for write statements.
+
+    name: Connection name in config file or a SQLAlchemy connection string.
+    query: Query name in config file, raw SQL, or @/path/to/file.sql.
+    wrapper: Wrap result. True wraps under "data" ({"data": ...}); a non-empty
+        string wraps under that key (e.g. "items" -> {"items": ...}); False or ""
+        returns the result unwrapped.
+    first: Return only the first row.
+    key: Column name to use as key (with value) or extract as scalar (with first).
+    value: Column name to use as value (used with key).
+    jsonkeys: Comma-separated columns whose string values should be parsed as JSON.
+    timezone: IANA timezone name used to resolve CURRENT_DATE and related variables (e.g. "America/New_York"). Defaults to local system timezone.
+    read_only: When true, roll back instead of committing (statement still runs).
+    """
+    read_only = _coerce_bool(read_only)
+    result = run_query_by_name(
+        name, query, timezone=timezone, read_only=read_only, **kwargs
+    )
+
+    # A non-row-returning statement (INSERT / UPDATE / DELETE / DDL) comes back
+    # as {"rowcount": N}; row shaping does not apply, but the wrapper still does.
+    if isinstance(result, dict):
+        if read_only:
+            _warn_read_only_write(result)
+        return apply_wrapper(result, wrapper)
+
+    return apply_output_transforms(result, wrapper, first, key, value, jsonkeys)

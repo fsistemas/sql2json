@@ -3,7 +3,12 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 from .parameter import parse_parameter
-from .sql2json import list_connections, list_queries, run_query2json, run_query_by_name
+from .sql2json import (
+    list_connections,
+    list_queries,
+    run_query2json,
+    run_query_by_name,
+)
 
 
 def _package_version() -> str:
