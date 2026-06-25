@@ -15,4 +15,3 @@ exclude =
     .pytest_cache
     .vscode
     .github
-    .circleci

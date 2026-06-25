@@ -142,9 +142,9 @@ pip install --upgrade "sql2json[postgres,mysql]"      # inside a venv
 Verify the installed version:
 
 ```bash
+sql2json --version                       # or: sql2json -v
 uv tool list                             # shows isolated tool versions
 pipx list                                # shows pipx-managed versions
-python -c "import importlib.metadata as m; print(m.version('sql2json'))"
 ```
 
 ## Docker
