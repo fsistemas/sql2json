@@ -1,7 +1,7 @@
 [project]
 name = "sql2json"
-version = "0.3.0"
-description = "CLI to run SQL queries on any SQLAlchemy database and output JSON, CSV, or Excel"
+version = "0.3.1"
+description = "CLI to run SQL reads and writes on any SQLAlchemy database and output JSON, CSV, or Excel"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]

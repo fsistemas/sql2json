@@ -6,15 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-06-25
+
 ### Added
-- `--read-only` flag (default off) for an opt-in safe mode: the statement still runs but nothing is persisted. A real database read-only transaction is requested where supported — SQLite (`PRAGMA query_only`), PostgreSQL/MySQL (`SET TRANSACTION READ ONLY`) — so a write is rejected by the database up front, with an unconditional rollback as the portable backstop for any other backend. A write under `--read-only` reports `{"rowcount": ...}` and prints a notice to stderr (`read-only mode: write not persisted ...`) instead of persisting; SELECT returns rows normally. Recommended for agents, automation, and exploration. Also available from Python as `run_query2json(..., read_only=True)`.
-- `--version` / `-v` flag prints the installed version (`sql2json <version>`) and exits 0, instead of trying to run a query named `version`.
-- The real-database integration suite now provisions ephemeral PostgreSQL and MySQL via [testcontainers](https://testcontainers-python.readthedocs.io/) by default, so `uv run --extra integration pytest -m integration` works against any running Docker/Podman with no pre-provisioned stack. Set `SQL2JSON_TEST_PG_URL` / `SQL2JSON_TEST_MYSQL_URL` to reuse an external/compose database instead; `./scripts/test-integration.sh` uses these overrides to drive the `docker-compose.yml` stack.
+- DML/DDL writes: INSERT/UPDATE/DELETE/DDL persist (autocommit) and return `{"rowcount": N}`; SELECT/`... RETURNING` return rows.
+- `--read-only` safe mode: runs the statement but persists nothing (DB read-only on SQLite/PostgreSQL/MySQL, rollback backstop elsewhere). Also `run_query2json(..., read_only=True)`.
+- `--version` / `-v` prints the installed version and exits.
+- Integration tests provision ephemeral PostgreSQL/MySQL via testcontainers; `SQL2JSON_TEST_PG_URL` / `SQL2JSON_TEST_MYSQL_URL` reuse an external database.
 
 ### Changed
-- The default command now commits writes by default (autocommit). INSERT / UPDATE / DELETE / DDL persist and return `{"rowcount": N}` instead of raising `ResourceClosedError`; SELECT / `... RETURNING` return rows shaped by the transform flags. The reported rowcount is clamped to `0` (`max(rowcount, 0)`) so a DDL / "count unknown" statement — which drivers report as `-1` on SQLite/PostgreSQL but `0` on MySQL — yields a consistent `{"rowcount": 0}` across databases. The separate `execute` subcommand and `run_execute2json` helper have been removed — use the default command to write and `--read-only` to avoid persisting.
-- The Docker image now uses an Alpine base with a multi-stage build, producing a
-  smaller image (~99 MB). It continues to run as a non-root user.
+- Docker image switched to an Alpine multi-stage build (~99 MB), still non-root.
 
 ## [0.3.0] - 2026-06-22
 
