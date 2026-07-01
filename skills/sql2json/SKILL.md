@@ -300,6 +300,7 @@ Supported agent targets:
 |---|---|
 | Hermes | `~/.hermes/skills/productivity/sql2json/SKILL.md` |
 | Claude | `~/.claude/skills/sql2json/SKILL.md` |
+| Pi | `~/.pi/agent/skills/sql2json/SKILL.md` |
 
 See `docs/skill-sync.md` for the full agent-target map.
 

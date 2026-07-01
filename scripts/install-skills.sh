@@ -7,7 +7,7 @@ canonical="$repo_root/skills/sql2json/SKILL.md"
 agents=(
   "hermes:$HOME/.hermes/skills/productivity/sql2json/SKILL.md"
   "claude:$HOME/.claude/skills/sql2json/SKILL.md"
-  "repo-claude:$repo_root/.claude/skills/sql2json/SKILL.md"
+  "pi:$HOME/.pi/agent/skills/sql2json/SKILL.md"
 )
 
 installed=()
@@ -18,7 +18,7 @@ for entry in "${agents[@]}"; do
   target="${entry#*:}"
   base_dir="$(dirname "$(dirname "$target")")"
 
-  if [[ "$name" == repo-claude || -d "$base_dir" || -e "$base_dir" ]]; then
+  if [[ -d "$base_dir" || -e "$base_dir" ]]; then
     mkdir -p "$(dirname "$target")"
     ln -sfn "$canonical" "$target"
     installed+=("$name")
