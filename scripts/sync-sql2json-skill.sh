@@ -7,7 +7,7 @@ canonical="$repo_root/skills/sql2json/SKILL.md"
 targets=(
   "$HOME/.hermes/skills/productivity/sql2json/SKILL.md"
   "$HOME/.claude/skills/sql2json/SKILL.md"
-  "$repo_root/.claude/skills/sql2json/SKILL.md"
+  "$HOME/.pi/agent/skills/sql2json/SKILL.md"
 )
 
 for target in "${targets[@]}"; do
