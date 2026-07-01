@@ -1,5 +1,11 @@
 # Using `sql2json` with AI Agents and LLMs
 
+> **Working on this repository?** Coding agents and maintainers should read
+> `WORKFLOW.md` and `WORKFLOW.local.md` first. They define the public-safe
+> branch/PR lifecycle, francisco-boards usage, validation gates, and release
+> discipline for this repo (`S2J`, base branch `master`). The rest of this file
+> explains how agents should use `sql2json` as a CLI/library.
+
 `sql2json` runs SQL queries via SQLAlchemy and outputs JSON or CSV to stdout. It is invoked as a CLI tool or imported as a Python package — no framework coupling, no MCP server required.
 
 > **Invocation:** examples below use the `sql2json` command, available **since v0.2.1**. On `0.2.0` and earlier — or when the package's scripts directory is not on `PATH` — substitute the equivalent `python -m sql2json ...` form (on Windows, `py -m sql2json ...`).

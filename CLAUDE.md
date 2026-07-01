@@ -1,6 +1,12 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) and other coding agents when working with code in this repository.
+
+## Read this first
+
+1. Follow `WORKFLOW.md` and `WORKFLOW.local.md` for board usage, branch naming, PR lifecycle, validation gates, and release discipline.
+2. This is a public repository. Keep commits, PR bodies, and checked-in docs public-safe: no secrets, local-only absolute paths, private board details, or agent-generated footers.
+3. Use `francisco-boards` for maintainer/agent task status. Project key: `S2J`; base branch: `master`; branch format: `feature/S2J-N`.
 
 ## Commands
 
